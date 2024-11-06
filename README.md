@@ -69,7 +69,7 @@ This tool is designed to automate various tasks such as organizing files, sendin
 ## Usage
 
 
-### Organize Files (Under Development and NOT released yet.)
+### Organize Files (Under Development and NOT released yet)
 
 1. Click on "Organize Files" to open the file organization customization dialog.
 
