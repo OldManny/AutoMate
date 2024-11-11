@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap, QColor
 from PyQt5.QtCore import Qt, QCoreApplication
+from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
 
 
 # Main application class inheriting from QMainWindow
@@ -43,10 +44,14 @@ class MainApp(QMainWindow):
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(10, 0, 10, 0)  # Margins for button layout
 
-        # Placeholder buttons for core application features
+        # Button for the File Organizer functionality
         self.file_organizer_btn = self.create_custom_button("Organize Files", 200, 50)
+        self.file_organizer_btn.clicked.connect(
+            self.open_file_organizer_customization
+        )  # Connect to dialog
         button_layout.addWidget(self.file_organizer_btn)
 
+        # Placeholder buttons for core application features
         self.email_sender_btn = self.create_custom_button("Send Email", 200, 50)
         button_layout.addWidget(self.email_sender_btn)
 
@@ -95,6 +100,13 @@ class MainApp(QMainWindow):
         )  # Get center point of screen
         qr.moveCenter(cp)  # Move window geometry to center point
         self.move(qr.topLeft())  # Move the window to the new center position
+
+    def open_file_organizer_customization(self):
+        """Instantiate and open the File Organizer dialog."""
+        self.file_organizer_dialog = FileOrganizerCustomizationDialog(
+            self
+        )  # Create the dialog
+        self.file_organizer_dialog.exec_()  # Execute the dialog
 
     def update_status(self, message):
         """
