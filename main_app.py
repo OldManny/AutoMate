@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QColor
 from PyQt5.QtCore import Qt, QCoreApplication
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
+from src.ui.style import MAIN_APP_BUTTON_STYLE, STATUS_AREA_STYLE  # Import styles
 
 
 # Main application class inheriting from QMainWindow
@@ -46,9 +47,7 @@ class MainApp(QMainWindow):
 
         # Button for the File Organizer functionality
         self.file_organizer_btn = self.create_custom_button("Organize Files", 200, 50)
-        self.file_organizer_btn.clicked.connect(
-            self.open_file_organizer_customization
-        )  # Connect to dialog
+        self.file_organizer_btn.clicked.connect(self.open_file_organizer_customization)
         button_layout.addWidget(self.file_organizer_btn)
 
         # Placeholder buttons for core application features
@@ -65,6 +64,7 @@ class MainApp(QMainWindow):
         self.status = QTextEdit(self)
         self.status.setReadOnly(True)  # Make status area read-only
         self.status.setFixedHeight(100)  # Fixed height for consistent layout
+        self.status.setStyleSheet(STATUS_AREA_STYLE)  # Apply centralized style
         main_layout.addWidget(self.status)
 
         # Set the main layout as the central widget for the window
@@ -76,19 +76,7 @@ class MainApp(QMainWindow):
         """Creates a styled button with specified text, width, and height."""
         button = QPushButton(text, self)  # Create button with label text
         button.setFixedSize(width, height)  # Set button dimensions
-        button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            """
-        )  # Custom button styling
+        button.setStyleSheet(MAIN_APP_BUTTON_STYLE)  # Apply centralized button style
         button.setCursor(Qt.PointingHandCursor)  # Change cursor on hover
         return button
 
