@@ -87,6 +87,10 @@ This tool is designed to automate various tasks such as organizing files, sendin
 
 8. **Backup Files**: Create a backup of all files.
 
+<p align="center">
+  <img src="images/OrganizeFiles.png" alt="Main Interface" />
+</p>
+
 
 ### Send Email
 

@@ -28,7 +28,7 @@ def create_folder_input():
     return folder_input
 
 
-def create_folder_icon_button(icon_path="assets/folder(3).png"):
+def create_folder_icon_button(icon_path="assets/folder.png"):
     # Create folder icon button with a specific icon and pointer cursor
     icon_btn = QPushButton()
     icon_btn.setIcon(QIcon(icon_path))
