@@ -6,7 +6,7 @@ QPushButton {
     background-color: #007BFF;  /* Blue background */
     color: white;  /* White text color */
     border: none;  /* Remove default border */
-    border-radius: 10px;  /* Rounded corners */
+    border-radius: 7px;  /* Rounded corners */
 }
 QPushButton:hover {
     background-color: #0056b3;  /* Darker blue when hover */
@@ -19,7 +19,7 @@ QPushButton {
     background-color: #6c757d;  /* Gray background */
     color: white;  /* White text color */
     border: none;  /* Remove default border */
-    border-radius: 10px;  /* Rounded corners */
+    border-radius: 7px;  /* Rounded corners */
 }
 QPushButton:hover {
     background-color: #5a6268;  /* Darker gray when hover */

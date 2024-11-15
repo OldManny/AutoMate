@@ -13,7 +13,7 @@ def create_blue_button(text):
 
     """
     button = QPushButton(text)  # Initialize button with text
-    button.setFixedSize(69, 27)  # Set fixed button size
+    button.setFixedSize(79, 27)  # Set fixed button size
     button.setStyleSheet(BLUE_BUTTON_STYLE)  # Apply blue button style
     return button
 
@@ -27,7 +27,7 @@ def create_gray_button(text):
 
     """
     button = QPushButton(text)  # Initialize button with text
-    button.setFixedSize(69, 27)  # Set fixed button size
+    button.setFixedSize(79, 27)  # Set fixed button size
     button.setStyleSheet(GRAY_BUTTON_STYLE)  # Apply gray button style
     return button
 
