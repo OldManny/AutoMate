@@ -134,13 +134,12 @@ class FileOrganizerCustomizationDialog(QDialog):
         qr.moveCenter(cp)  # Move dialog geometry to center point
         self.move(qr.topLeft())  # Set dialog position
 
-
-def on_undo_clicked(self):
-    """Handles the Undo button click to revert the last file organization operation."""
-    try:
-        undo_last_operation()  # Attempt to undo the last operation
-        self.parent().update_status("The last operation was successfully undone.")  # Success message
-    except ValueError as e:
-        self.parent().update_status(str(e))  # Display user-friendly error message
-    except Exception as e:
-        self.parent().update_status(f"An unexpected error occurred: {str(e)}")  # Handle unexpected errors
+    def on_undo_clicked(self):
+        """Handles the Undo button click to revert the last file organization operation."""
+        try:
+            undo_last_operation()  # Attempt to undo the last operation
+            self.parent().update_status("The last operation was successfully undone.")  # Success message
+        except ValueError as e:
+            self.parent().update_status(str(e))  # Display user-friendly error message
+        except Exception as e:
+            self.parent().update_status(f"An unexpected error occurred: {str(e)}")  # Handle unexpected errors

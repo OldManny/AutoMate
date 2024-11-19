@@ -61,7 +61,7 @@ def create_folder_icon_button(
     icon_btn = QPushButton()  # Initialize button for folder icon
     icon_btn.setIcon(QIcon(icon_path))  # Set the icon for the button
     icon_btn.setFixedSize(30, 30)  # Set fixed button size
-    icon_btn.setIconSize(QSize(30, 30))  # Set icon size
+    icon_btn.setIconSize(QSize(25, 25))  # Set icon size
     icon_btn.setCursor(QCursor(Qt.PointingHandCursor))  # Set cursor to pointing hand on hover
     icon_btn.setStyleSheet("border: none;")  # Remove button border
     return icon_btn
