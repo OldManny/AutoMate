@@ -23,6 +23,7 @@ This tool is designed to automate various tasks such as organizing files, sendin
   - [Data Entry](#automate-data-entry)
 - [Undo Last Action](#undo-last-action)
 - [Testing](#testing)
+- [Attribution](#attribution)
 
 
 ## Features
@@ -110,3 +111,8 @@ Both the Organize Files and Automate Data Entry dialogs will include an "Undo La
 ## Testing
 
 **Under Development**
+
+
+## Attribution
+
+- Photo by [Dariusz Sankowski](https://unsplash.com/@dariuszsankowski) on [Unsplash](https://unsplash.com/photos/3OiYMgDKJ6k)
