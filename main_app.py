@@ -1,16 +1,9 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QPushButton,
-    QLabel,
-    QVBoxLayout,
-    QHBoxLayout,
-    QWidget,
-    QTextEdit,
-)
-from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtCore import Qt, QCoreApplication
+
+from PyQt5.QtCore import QCoreApplication, Qt
+from PyQt5.QtGui import QColor, QPixmap
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTextEdit, QVBoxLayout, QWidget
+
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
 from src.ui.style import MAIN_APP_BUTTON_STYLE, STATUS_AREA_STYLE  # Import styles
 
@@ -83,17 +76,13 @@ class MainApp(QMainWindow):
     def center(self):
         """Centers the application window on the screen."""
         qr = self.frameGeometry()  # Get window geometry
-        cp = (
-            QCoreApplication.instance().desktop().screenGeometry().center()
-        )  # Get center point of screen
+        cp = QCoreApplication.instance().desktop().screenGeometry().center()  # Get center point of screen
         qr.moveCenter(cp)  # Move window geometry to center point
         self.move(qr.topLeft())  # Move the window to the new center position
 
     def open_file_organizer_customization(self):
         """Instantiate and open the File Organizer dialog."""
-        self.file_organizer_dialog = FileOrganizerCustomizationDialog(
-            self
-        )  # Create the dialog
+        self.file_organizer_dialog = FileOrganizerCustomizationDialog(self)  # Create the dialog
         self.file_organizer_dialog.exec_()  # Execute the dialog
 
     def update_status(self, message):

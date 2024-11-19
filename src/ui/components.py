@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QPushButton, QLineEdit
-from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtCore import QSize, Qt
-from .style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE, FOLDER_INPUT_STYLE
+from PyQt5.QtGui import QCursor, QIcon
+from PyQt5.QtWidgets import QLineEdit, QPushButton
+
+from .style import BLUE_BUTTON_STYLE, FOLDER_INPUT_STYLE, GRAY_BUTTON_STYLE
 
 
 def create_blue_button(text):
@@ -61,8 +62,6 @@ def create_folder_icon_button(
     icon_btn.setIcon(QIcon(icon_path))  # Set the icon for the button
     icon_btn.setFixedSize(30, 30)  # Set fixed button size
     icon_btn.setIconSize(QSize(30, 30))  # Set icon size
-    icon_btn.setCursor(
-        QCursor(Qt.PointingHandCursor)
-    )  # Set cursor to pointing hand on hover
+    icon_btn.setCursor(QCursor(Qt.PointingHandCursor))  # Set cursor to pointing hand on hover
     icon_btn.setStyleSheet("border: none;")  # Remove button border
     return icon_btn
