@@ -33,7 +33,7 @@ FOLDER_INPUT_STYLE = """
 QLineEdit {
     background-color: #6c757d;  /* Dark gray background */
     color: white;  /* White text color */
-    border-radius: 13px;  /* Rounded corners */
+    border-radius: 11px;  /* Rounded corners */
     padding: 4px;  /* Padding for spacing */
 }
 """
