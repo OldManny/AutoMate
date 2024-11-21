@@ -1,9 +1,6 @@
-from datetime import datetime
-import os
-
 from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 
-from src.automation.file_organizer import sort_by_type, undo_last_operation
+from src.automation.file_organizer import sort_by_date, sort_by_type, undo_last_operation
 from src.ui.components import create_blue_button, create_folder_icon_button, create_folder_input, create_gray_button
 from src.ui.style import CARD_STYLE
 
@@ -99,19 +96,19 @@ class FileOrganizerCustomizationDialog(QDialog):
             self.parent().update_status("Please select a folder to organize.")
             return
 
-        # Check if any operation is selected
-        if not any(checkbox.isChecked() for checkbox in self.checkboxes):
-            self.parent().update_status("Please select an operation to perform.")
-            return
-
-        if self.sort_by_type.isChecked():
-            try:
-                sort_by_type(folder_path)  # Call sort_by_type with the selected folder path
-                folder_name = os.path.basename(folder_path)
-                timestamp = datetime.now().strftime("%H:%M on %Y-%m-%d")
-                self.parent().update_status(f"{folder_name} folder was sorted by type at {timestamp}.")
-            except Exception as e:
-                self.parent().update_status(str(e))
+        try:
+            if self.sort_by_type.isChecked():
+                sort_by_type(folder_path)
+                self.parent().update_status("Files sorted by type successfully.")
+            elif self.sort_by_date.isChecked():
+                sort_by_date(folder_path)
+                self.parent().update_status("Files sorted by date successfully.")
+            else:
+                self.parent().update_status("Please select an operation to run.")
+        except ValueError as e:
+            self.parent().update_status(str(e))  # User-friendly error message
+        except Exception as e:
+            self.parent().update_status(f"An unexpected error occurred: {str(e)}")
 
     def select_folder(self):
         """Opens a folder dialog to select a directory, displaying the selected path in the input field."""
