@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 
-from src.automation.file_organizer import sort_by_date, sort_by_type, undo_last_operation
+from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
 from src.ui.components import create_blue_button, create_folder_icon_button, create_folder_input, create_gray_button
 from src.ui.style import CARD_STYLE
 
@@ -103,6 +103,9 @@ class FileOrganizerCustomizationDialog(QDialog):
             elif self.sort_by_date.isChecked():
                 sort_by_date(folder_path)
                 self.parent().update_status("Files sorted by date successfully.")
+            elif self.sort_by_size.isChecked():
+                sort_by_size(folder_path)
+                self.parent().update_status("Files sorted by size successfully.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
