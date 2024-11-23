@@ -49,7 +49,7 @@ def create_folder_input():
 
 
 def create_folder_icon_button(
-    icon_path="assets/folder.png",
+    icon_path="assets/photos/folder.png",
 ):  # Folder icon sourced from Freepik - Flaticon
     """
     Creates a QPushButton with an icon, styled as an icon-only button for folder selection.

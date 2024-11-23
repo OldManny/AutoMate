@@ -27,7 +27,7 @@ class MainApp(QMainWindow):
 
         # Header Image setup
         self.header_image = QLabel(self)
-        pixmap = QPixmap("assets/Header.jpg")  # Load header image
+        pixmap = QPixmap("assets/photos/Header.jpg")  # Load header image
         self.header_image.setPixmap(pixmap)  # Set the pixmap to QLabel
         self.header_image.setScaledContents(True)  # Scale image to fit QLabel
         main_layout.addWidget(self.header_image)
