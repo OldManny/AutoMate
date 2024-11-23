@@ -1,7 +1,8 @@
+import os
 import sys
 
 from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtGui import QColor, QPixmap
+from PyQt5.QtGui import QColor, QFont, QFontDatabase, QPixmap
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
@@ -100,6 +101,15 @@ class MainApp(QMainWindow):
 # Main application entry point
 if __name__ == "__main__":
     app = QApplication(sys.argv)  # Initialize the application
+    # Set a global font for the entire application
+    font_path = os.path.abspath("assets/fonts/Poppins-Regular.ttf")
+    font_id = QFontDatabase.addApplicationFont(font_path)
+    if font_id == -1:
+        print(f"Failed to load Poppins font from {font_path}. Falling back to default.")
+    else:
+        # Set the global font to Poppins
+        font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+        app.setFont(QFont(font_family, 14))
     main_app = MainApp()  # Create an instance of MainApp
     main_app.show()  # Show the main window
     sys.exit(app.exec_())  # Start the application event loop
