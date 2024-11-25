@@ -1,5 +1,6 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QCheckBox, QDesktopWidget, QDialog, QFileDialog, QHBoxLayout, QVBoxLayout
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QCheckBox, QDesktopWidget, QDialog, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
 from src.ui.components import create_blue_button, create_card, create_folder_icon_button, create_folder_input, create_gray_button, create_separator
@@ -11,8 +12,10 @@ class FileOrganizerCustomizationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Organize Files")
-        self.setFixedSize(400, 510)
-        self.center()
+        self.setFixedSize(400, 610)
+
+        # Initialize the checkbox dictionary
+        self.checkbox_dict = {}
 
         # Set the style sheet
         self.setStyleSheet(FILE_ORGANIZER_DIALOG_STYLE)
@@ -24,6 +27,39 @@ class FileOrganizerCustomizationDialog(QDialog):
         layout = QVBoxLayout()
         layout.setSpacing(10)
         layout.setContentsMargins(20, 20, 20, 20)
+
+        # Header section
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 10, 0, 0)  # Adjust top margin to reduce space
+        header_layout.setSpacing(5)
+        header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+
+        # Icon
+        icon_label = QLabel()
+        icon_pixmap = QPixmap("assets/photos/file_management.png")  # Icon sourced from Freepik - Flaticon
+        icon_pixmap = icon_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_label.setPixmap(icon_pixmap)
+        icon_label.setAlignment(Qt.AlignCenter)
+
+        # Description text
+        short_description = QLabel("Manage your files efficiently with options to\nsort, detect duplicates, and more.")
+        short_description.setAlignment(Qt.AlignCenter)
+        short_description.setWordWrap(True)
+        short_description.setStyleSheet("color: #A1A2A2; font-size: 12px;")
+        short_description.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        # Add widgets to header layout
+        header_layout.addWidget(icon_label)
+        header_layout.addWidget(short_description)
+
+        # Add the header to the main layout
+        layout.addWidget(header_widget)
+
+        # Add a separator line after the header
+        separator_line = create_separator()
+        layout.addWidget(separator_line)
+        layout.addSpacing(15)
 
         # Folder selection section
         folder_layout = QHBoxLayout()
@@ -40,20 +76,20 @@ class FileOrganizerCustomizationDialog(QDialog):
 
         # Sorting Operations Card
         sorting_labels = ["Sort by Type", "Sort by Date", "Sort by Size"]
-        sorting_card = self.build_checkbox_card(sorting_labels, margins=(10, 15, 10, 15), spacing=5)
+        sorting_card = self.build_checkbox_card(sorting_labels)
         layout.addWidget(sorting_card)
 
         # Detect Duplicates Card
-        detect_duplicates_card = self.build_checkbox_card(["Detect Duplicates"], margins=(10, 20, 10, 20), spacing=5)
+        detect_duplicates_card = self.build_checkbox_card(["Detect Duplicates"])
         layout.addWidget(detect_duplicates_card)
 
         # Rename Files Card
-        rename_files_card = self.build_checkbox_card(["Rename Files"], margins=(10, 20, 10, 20), spacing=5)
+        rename_files_card = self.build_checkbox_card(["Rename Files"])
         layout.addWidget(rename_files_card)
 
         # Compress and Backup Files Card
         management_labels = ["Compress Files", "Backup Files"]
-        management_card = self.build_checkbox_card(management_labels, margins=(10, 15, 10, 15), spacing=5)
+        management_card = self.build_checkbox_card(management_labels)
         layout.addWidget(management_card)
 
         # Button layout
@@ -78,13 +114,13 @@ class FileOrganizerCustomizationDialog(QDialog):
         """
         Build a card widget containing checkboxes with the relevant labels.
         """
-        # Create checkboxes and connect signals
         checkboxes = []
         for label in labels:
             checkbox = QCheckBox(label)
             checkbox.stateChanged.connect(lambda state, cb=checkbox: self.single_selection(cb))
             self.checkboxes.append(checkbox)
             checkboxes.append(checkbox)
+            self.checkbox_dict[label] = checkbox  # Store in dictionary
 
         # Create content widgets with separators
         content_widgets = []
@@ -101,23 +137,24 @@ class FileOrganizerCustomizationDialog(QDialog):
         """
         Executes the selected organization operation.
         """
-        folder_path = self.folder_input.text()
+        folder_path = self.folder_input.text()  # Get the selected folder path
         if not folder_path:
             self.parent().update_status("Please select a folder to organize.")
             return
 
         try:
             if any(checkbox.isChecked() for checkbox in self.checkboxes):
-                if self.sort_by_type.isChecked():
+                if self.checkbox_dict["Sort by Type"].isChecked():
                     sort_by_type(folder_path)
                     self.parent().update_status("Files sorted by type successfully.")
-                elif self.sort_by_date.isChecked():
+                elif self.checkbox_dict["Sort by Date"].isChecked():
                     sort_by_date(folder_path)
                     self.parent().update_status("Files sorted by date successfully.")
-                elif self.sort_by_size.isChecked():
+                elif self.checkbox_dict["Sort by Size"].isChecked():
                     sort_by_size(folder_path)
                     self.parent().update_status("Files sorted by size successfully.")
-                # Handling for other checkboxes
+                else:
+                    self.parent().update_status("Please select an operation to run.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
@@ -128,9 +165,9 @@ class FileOrganizerCustomizationDialog(QDialog):
     def select_folder(self):
         """Opens a folder dialog to select a directory, displaying the selected path in the input field."""
         options = QFileDialog.Options()
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder", options=options)
+        folder = QFileDialog.getExistingDirectory(self, "Select Folder", options=options)  # Get selected folder path
         if folder:
-            self.folder_input.setText(folder)
+            self.folder_input.setText(folder)  # Display selected folder path
 
     def single_selection(self, current_checkbox):
         """Ensures only one checkbox is selected at a time."""

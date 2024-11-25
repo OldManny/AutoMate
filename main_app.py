@@ -103,14 +103,14 @@ class MainApp(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)  # Initialize the application
     # Set a global font for the entire application
-    font_path = os.path.abspath("assets/fonts/Poppins-Regular.ttf")
+    font_path = os.path.abspath("assets/fonts/Poppins-Medium.ttf")
     font_id = QFontDatabase.addApplicationFont(font_path)
     if font_id == -1:
         print(f"Failed to load Poppins font from {font_path}. Falling back to default.")
     else:
         # Set the global font to Poppins
         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-        app.setFont(QFont(font_family, 14))
+        app.setFont(QFont(font_family, 13))
     main_app = MainApp()  # Create an instance of MainApp
     main_app.show()  # Show the main window
     sys.exit(app.exec_())  # Start the application event loop
