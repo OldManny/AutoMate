@@ -12,7 +12,7 @@ class FileOrganizerCustomizationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Organize Files")
-        self.setFixedSize(400, 610)
+        self.setFixedSize(400, 620)
 
         # Initialize the checkbox dictionary
         self.checkbox_dict = {}
@@ -37,8 +37,9 @@ class FileOrganizerCustomizationDialog(QDialog):
 
         # Icon
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/photos/file_management.png")  # Icon sourced from Freepik - Flaticon
-        icon_pixmap = icon_pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_pixmap = QPixmap("assets/photos/file_management.png")  # Icon by Uniconlabs
+        icon_pixmap = icon_pixmap.scaled(43, 43, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_label.setContentsMargins(0, 0, 0, 5)
         icon_label.setPixmap(icon_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
 
@@ -46,7 +47,7 @@ class FileOrganizerCustomizationDialog(QDialog):
         short_description = QLabel("Manage your files efficiently with options to\nsort, detect duplicates, and more.")
         short_description.setAlignment(Qt.AlignCenter)
         short_description.setWordWrap(True)
-        short_description.setStyleSheet("color: #A1A2A2; font-size: 12px;")
+        short_description.setStyleSheet("color: #C9D3D5; font-size: 12px;")
         short_description.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         # Add widgets to header layout
