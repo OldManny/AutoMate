@@ -1,124 +1,136 @@
-from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QCheckBox, QDesktopWidget, QDialog, QFileDialog, QHBoxLayout, QVBoxLayout
 
 from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
-from src.ui.components import create_blue_button, create_folder_icon_button, create_folder_input, create_gray_button
-from src.ui.style import CARD_STYLE
+from src.ui.components import create_blue_button, create_card, create_folder_icon_button, create_folder_input, create_gray_button, create_separator
+from src.ui.style import FILE_ORGANIZER_DIALOG_STYLE
 
 
 # Dialog class for configuring file organization options
 class FileOrganizerCustomizationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Organize Files")  # Set dialog window title
-        self.resize(400, 400)  # Set initial size of the dialog
-        self.center()  # Center the dialog on the screen
+        self.setWindowTitle("Organize Files")
+        self.setFixedSize(400, 510)
+        self.center()
 
-        layout = QVBoxLayout()  # Main layout for the dialog
+        # Set the style sheet
+        self.setStyleSheet(FILE_ORGANIZER_DIALOG_STYLE)
 
-        # Step 1: Folder selection section
-        folder_layout = QHBoxLayout()  # Horizontal layout for folder selection
+        # Disable the window's resizing feature
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint & ~Qt.WindowMaximizeButtonHint)
 
-        # Folder input field and folder icon button using reusable components
+        # Main layout
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Folder selection section
+        folder_layout = QHBoxLayout()
         self.folder_input = create_folder_input()
         folder_layout.addWidget(self.folder_input)
 
-        self.folder_icon_btn = create_folder_icon_button()  # Reusable icon button
-        self.folder_icon_btn.clicked.connect(self.select_folder)  # Connect icon button to folder selection
+        self.folder_icon_btn = create_folder_icon_button()
+        self.folder_icon_btn.clicked.connect(self.select_folder)
         folder_layout.addWidget(self.folder_icon_btn)
+        layout.addLayout(folder_layout)
 
-        layout.addLayout(folder_layout)  # Add folder selection layout to main layout
+        # Initialize checkboxes list
+        self.checkboxes = []
 
-        # Step 2: Checkbox area with rounded card style
-        checkbox_card = QWidget()
-        checkbox_layout = QVBoxLayout(checkbox_card)
-        checkbox_card.setStyleSheet(CARD_STYLE)  # Apply centralized card style
+        # Sorting Operations Card
+        sorting_labels = ["Sort by Type", "Sort by Date", "Sort by Size"]
+        sorting_card = self.build_checkbox_card(sorting_labels, margins=(10, 15, 10, 15), spacing=5)
+        layout.addWidget(sorting_card)
 
-        # Checkboxes for different automations
-        self.checkboxes = []  # List to store all checkboxes for single-selection logic
-        self.sort_by_type = QCheckBox("Sort by Type")
-        self.sort_by_type.stateChanged.connect(lambda: self.single_selection(self.sort_by_type))
-        checkbox_layout.addWidget(self.sort_by_type)
-        self.checkboxes.append(self.sort_by_type)
+        # Detect Duplicates Card
+        detect_duplicates_card = self.build_checkbox_card(["Detect Duplicates"], margins=(10, 20, 10, 20), spacing=5)
+        layout.addWidget(detect_duplicates_card)
 
-        self.sort_by_date = QCheckBox("Sort by Date")
-        self.sort_by_date.stateChanged.connect(lambda: self.single_selection(self.sort_by_date))
-        checkbox_layout.addWidget(self.sort_by_date)
-        self.checkboxes.append(self.sort_by_date)
+        # Rename Files Card
+        rename_files_card = self.build_checkbox_card(["Rename Files"], margins=(10, 20, 10, 20), spacing=5)
+        layout.addWidget(rename_files_card)
 
-        self.sort_by_size = QCheckBox("Sort by Size")
-        self.sort_by_size.stateChanged.connect(lambda: self.single_selection(self.sort_by_size))
-        checkbox_layout.addWidget(self.sort_by_size)
-        self.checkboxes.append(self.sort_by_size)
+        # Compress and Backup Files Card
+        management_labels = ["Compress Files", "Backup Files"]
+        management_card = self.build_checkbox_card(management_labels, margins=(10, 15, 10, 15), spacing=5)
+        layout.addWidget(management_card)
 
-        self.detect_duplicates = QCheckBox("Detect Duplicates")
-        self.detect_duplicates.stateChanged.connect(lambda: self.single_selection(self.detect_duplicates))
-        checkbox_layout.addWidget(self.detect_duplicates)
-        self.checkboxes.append(self.detect_duplicates)
-
-        self.rename_files = QCheckBox("Rename Files")
-        self.rename_files.stateChanged.connect(lambda: self.single_selection(self.rename_files))
-        checkbox_layout.addWidget(self.rename_files)
-        self.checkboxes.append(self.rename_files)
-
-        self.compress_files = QCheckBox("Compress Files")
-        self.compress_files.stateChanged.connect(lambda: self.single_selection(self.compress_files))
-        checkbox_layout.addWidget(self.compress_files)
-        self.checkboxes.append(self.compress_files)
-
-        self.backup_files = QCheckBox("Backup Files")
-        self.backup_files.stateChanged.connect(lambda: self.single_selection(self.backup_files))
-        checkbox_layout.addWidget(self.backup_files)
-        self.checkboxes.append(self.backup_files)
-
-        layout.addWidget(checkbox_card)  # Add the card-styled widget to the main layout
-
-        # Run and Undo Buttons
+        # Button layout
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
         # Undo button using reusable component
         self.undo_btn = create_gray_button("Undo")
-        button_layout.addWidget(self.undo_btn)
         self.undo_btn.clicked.connect(self.on_undo_clicked)
+        button_layout.addWidget(self.undo_btn)
 
         # Run button using reusable component
         self.run_btn = create_blue_button("Run")
-        self.run_btn.clicked.connect(self.on_run_clicked)  # Connect Run button to on_run_clicked method
+        self.run_btn.clicked.connect(self.on_run_clicked)
         button_layout.addWidget(self.run_btn)
 
-        layout.addLayout(button_layout)  # Add button layout to main layout
+        # Add buttons to main layout
+        layout.addLayout(button_layout)
         self.setLayout(layout)
 
+    def build_checkbox_card(self, labels, margins=(10, 15, 10, 15), spacing=5):
+        """
+        Build a card widget containing checkboxes with the relevant labels.
+        """
+        # Create checkboxes and connect signals
+        checkboxes = []
+        for label in labels:
+            checkbox = QCheckBox(label)
+            checkbox.stateChanged.connect(lambda state, cb=checkbox: self.single_selection(cb))
+            self.checkboxes.append(checkbox)
+            checkboxes.append(checkbox)
+
+        # Create content widgets with separators
+        content_widgets = []
+        for idx, checkbox in enumerate(checkboxes):
+            content_widgets.append(checkbox)
+            if idx < len(checkboxes) - 1:
+                content_widgets.append(create_separator())
+
+        # Create and return the card
+        card = create_card(content_widgets, margins=margins, spacing=spacing)
+        return card
+
     def on_run_clicked(self):
-        """Executes the selected organization operation."""
-        folder_path = self.folder_input.text()  # Get the selected folder path
+        """
+        Executes the selected organization operation.
+        """
+        folder_path = self.folder_input.text()
         if not folder_path:
             self.parent().update_status("Please select a folder to organize.")
             return
 
         try:
-            if self.sort_by_type.isChecked():
-                sort_by_type(folder_path)
-                self.parent().update_status("Files sorted by type successfully.")
-            elif self.sort_by_date.isChecked():
-                sort_by_date(folder_path)
-                self.parent().update_status("Files sorted by date successfully.")
-            elif self.sort_by_size.isChecked():
-                sort_by_size(folder_path)
-                self.parent().update_status("Files sorted by size successfully.")
+            if any(checkbox.isChecked() for checkbox in self.checkboxes):
+                if self.sort_by_type.isChecked():
+                    sort_by_type(folder_path)
+                    self.parent().update_status("Files sorted by type successfully.")
+                elif self.sort_by_date.isChecked():
+                    sort_by_date(folder_path)
+                    self.parent().update_status("Files sorted by date successfully.")
+                elif self.sort_by_size.isChecked():
+                    sort_by_size(folder_path)
+                    self.parent().update_status("Files sorted by size successfully.")
+                # Handling for other checkboxes
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
-            self.parent().update_status(str(e))  # User-friendly error message
+            self.parent().update_status(str(e))
         except Exception as e:
             self.parent().update_status(f"An unexpected error occurred: {str(e)}")
 
     def select_folder(self):
         """Opens a folder dialog to select a directory, displaying the selected path in the input field."""
-        options = QFileDialog.Options()  # Dialog options
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder", options=options)  # Get selected folder path
+        options = QFileDialog.Options()
+        folder = QFileDialog.getExistingDirectory(self, "Select Folder", options=options)
         if folder:
-            self.folder_input.setText(folder)  # Display selected folder path
+            self.folder_input.setText(folder)
 
     def single_selection(self, current_checkbox):
         """Ensures only one checkbox is selected at a time."""
@@ -127,19 +139,39 @@ class FileOrganizerCustomizationDialog(QDialog):
                 if checkbox != current_checkbox:
                     checkbox.setChecked(False)
 
+    def showEvent(self, event):
+        """
+        Overriding the showEvent, ensuring that the self center is called
+        every time the dialog is shown.
+        """
+        super().showEvent(event)
+        self.center()
+
     def center(self):
-        """Centers the dialog on the screen relative to the parent window."""
-        qr = self.frameGeometry()  # Get the geometry of the dialog
-        cp = self.parent().frameGeometry().center()  # Get the center point of the parent window
-        qr.moveCenter(cp)  # Move dialog geometry to center point
-        self.move(qr.topLeft())  # Set dialog position
+        """
+        Centers the Organize Files window relative to its parent (main interface).
+        """
+        if self.parent():
+            parent_geometry = self.parent().frameGeometry()
+            parent_center = parent_geometry.center()
+            dialog_geometry = self.frameGeometry()
+            dialog_geometry.moveCenter(parent_center)
+            self.move(dialog_geometry.topLeft())
+        else:
+            # Fallback to centering on the screen if no parent is set
+            screen_center = QDesktopWidget().availableGeometry().center()
+            dialog_geometry = self.frameGeometry()
+            dialog_geometry.moveCenter(screen_center)
+            self.move(dialog_geometry.topLeft())
 
     def on_undo_clicked(self):
-        """Handles the Undo button click to revert the last file organization operation."""
+        """
+        Handles the Undo button click to revert the last file organization operation.
+        """
         try:
-            undo_last_operation()  # Attempt to undo the last operation
-            self.parent().update_status("The last operation was successfully undone.")  # Success message
+            undo_last_operation()
+            self.parent().update_status("The last operation was successfully undone.")
         except ValueError as e:
-            self.parent().update_status(str(e))  # Display user-friendly error message
+            self.parent().update_status(str(e))
         except Exception as e:
-            self.parent().update_status(f"An unexpected error occurred: {str(e)}")  # Handle unexpected errors
+            self.parent().update_status(f"An unexpected error occurred: {str(e)}")

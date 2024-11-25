@@ -13,12 +13,13 @@ from src.ui.style import MAIN_APP_BUTTON_STYLE, STATUS_AREA_STYLE  # Import styl
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setFixedSize(650, 660)  # Set fixed size
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Remove maximize button
         self.initUI()  # Initialize the user interface
 
     def initUI(self):
         """Sets up the main UI components and layout."""
         self.setWindowTitle("AutoMate")  # Set the window title
-        self.resize(600, 600)  # Set the initial window size
         self.center()  # Center the window on the screen
 
         # Create the main layout and set margins

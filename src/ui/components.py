@@ -1,52 +1,41 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QCursor, QIcon
-from PyQt5.QtWidgets import QLineEdit, QPushButton
+from PyQt5.QtWidgets import QFrame, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
-from .style import BLUE_BUTTON_STYLE, FOLDER_INPUT_STYLE, GRAY_BUTTON_STYLE
+from .style import BLUE_BUTTON_STYLE, CARD_STYLE, FOLDER_INPUT_STYLE, GRAY_BUTTON_STYLE, SEPARATOR_STYLE
 
 
 def create_blue_button(text):
     """
     Creates a QPushButton styled as a blue button with a fixed size.
-
-    Parameters:
-        text (str): The text label to display on the button.
-
     """
-    button = QPushButton(text)  # Initialize button with text
-    button.setFixedSize(79, 27)  # Set fixed button size
-    button.setStyleSheet(BLUE_BUTTON_STYLE)  # Apply blue button style
-    button.setCursor(Qt.PointingHandCursor)  # Change cursor on hover
+    button = QPushButton(text)
+    button.setFixedSize(79, 27)
+    button.setStyleSheet(BLUE_BUTTON_STYLE)
+    button.setCursor(Qt.PointingHandCursor)
     return button
 
 
 def create_gray_button(text):
     """
     Creates a QPushButton styled as a gray button with a fixed size.
-
-    Parameters:
-        text (str): The text label to display on the button.
-
     """
-    button = QPushButton(text)  # Initialize button with text
-    button.setFixedSize(79, 27)  # Set fixed button size
-    button.setStyleSheet(GRAY_BUTTON_STYLE)  # Apply gray button style
-    button.setCursor(Qt.PointingHandCursor)  # Change cursor on hover
+    button = QPushButton(text)
+    button.setFixedSize(79, 27)
+    button.setStyleSheet(GRAY_BUTTON_STYLE)
+    button.setCursor(Qt.PointingHandCursor)
     return button
 
 
 def create_folder_input():
     """
     Creates a QLineEdit styled for folder input with a placeholder text.
-
-    Returns:
-        QLineEdit: A non-editable line input field with a placeholder for folder selection.
     """
-    folder_input = QLineEdit()  # Initialize line edit for folder input
-    folder_input.setPlaceholderText("Select folder...")  # Set placeholder text
-    folder_input.setReadOnly(True)  # Make input read-only
-    folder_input.setFixedWidth(275)  # Set fixed width
-    folder_input.setStyleSheet(FOLDER_INPUT_STYLE)  # Apply folder input style
+    folder_input = QLineEdit()
+    folder_input.setPlaceholderText("Select folder...")
+    folder_input.setReadOnly(True)
+    folder_input.setFixedWidth(291)
+    folder_input.setStyleSheet(FOLDER_INPUT_STYLE)
     return folder_input
 
 
@@ -55,15 +44,51 @@ def create_folder_icon_button(
 ):  # Folder icon sourced from Freepik - Flaticon
     """
     Creates a QPushButton with an icon, styled as an icon-only button for folder selection.
-
-    Parameters:
-        icon_path (str): The file path to the icon image (default is "assets/folder.png").
-
     """
-    icon_btn = QPushButton()  # Initialize button for folder icon
-    icon_btn.setIcon(QIcon(icon_path))  # Set the icon for the button
-    icon_btn.setFixedSize(30, 30)  # Set fixed button size
-    icon_btn.setIconSize(QSize(25, 25))  # Set icon size
-    icon_btn.setCursor(QCursor(Qt.PointingHandCursor))  # Set cursor to pointing hand on hover
-    icon_btn.setStyleSheet("border: none;")  # Remove button border
+    icon_btn = QPushButton()
+    icon_btn.setIcon(QIcon(icon_path))
+    icon_btn.setFixedSize(30, 30)
+    icon_btn.setIconSize(QSize(25, 25))
+    icon_btn.setCursor(QCursor(Qt.PointingHandCursor))
+    icon_btn.setStyleSheet("border: none;")
     return icon_btn
+
+
+def create_separator():
+    """
+    Creates a separator widget with padding above and below.
+    """
+    separator_widget = QWidget()
+    separator_widget.setFixedHeight(10)
+    separator_layout = QVBoxLayout(separator_widget)
+    separator_layout.setContentsMargins(0, 0, 0, 0)
+    separator_layout.setSpacing(0)
+
+    # Add top padding
+    separator_layout.addSpacing(5)
+
+    # Create the separator line
+    separator_line = QFrame()
+    separator_line.setFixedHeight(1)
+    separator_line.setStyleSheet(SEPARATOR_STYLE)
+    separator_layout.addWidget(separator_line)
+
+    # Add bottom padding
+    separator_layout.addSpacing(5)
+
+    return separator_widget
+
+
+def create_card(content_widgets, class_name='card', margins=(10, 10, 10, 10), spacing=5):
+    """
+    Creates a styled card widget containing the given content widgets.
+    """
+    card = QWidget()
+    card.setProperty('class', class_name)
+    card.setStyleSheet(CARD_STYLE)
+    layout = QVBoxLayout(card)
+    layout.setSpacing(spacing)
+    layout.setContentsMargins(*margins)
+    for widget in content_widgets:
+        layout.addWidget(widget)
+    return card

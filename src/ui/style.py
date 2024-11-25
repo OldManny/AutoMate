@@ -35,18 +35,7 @@ QLineEdit {
     color: white;  /* White text color */
     border-radius: 13px;  /* Rounded corners */
     padding: 4px;  /* Padding for spacing */
-}
-"""
-
-################ Card (Container) Style ################
-
-# Style for container widgets like cards
-CARD_STYLE = """
-QWidget {
-    border: 1px solid #444;  /* Dark border */
-    border-radius: 10px;  /* Rounded corners */
-    background-color: #2c2c2c;  /* Dark background */
-    padding: 10px;  /* Padding for inner content */
+    padding-left: 12px;
 }
 """
 
@@ -74,5 +63,49 @@ QTextEdit {
     background-color: #2c2c2c;  /* Dark background for contrast */
     border: none;  /* Remove default border */
     padding: 5px;  /* Padding for inner spacing */
+}
+"""
+
+################ Dialog and Card Styles ################
+
+# Style for the File Organizer Customization Dialog
+FILE_ORGANIZER_DIALOG_STYLE = """
+QDialog {
+    background-color: #2E3030;
+    border-radius: 10px;
+}
+QCheckBox {
+    color: white;
+    padding: 5px;
+}
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+}
+"""
+
+# Style for card widgets
+CARD_STYLE = """
+QWidget[class="card"] {
+    background-color: #333333;
+    border: 1px solid #4f4f4f;  /* Dark border */
+    border-radius: 8px;
+    margin: 5px 0px;
+    padding: 10px 10px;  /* Padding to add space at top and bottom */
+}
+"""
+
+# Style for the separator line
+SEPARATOR_STYLE = """
+QFrame {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(79, 79, 79, 0),
+        stop:0.1 rgba(79, 79, 79, 255),
+        stop:0.9 rgba(79, 79, 79, 255),
+        stop:1 rgba(79, 79, 79, 0)
+    );
+    margin-left: 10px;
+    margin-right: 10px;
 }
 """

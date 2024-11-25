@@ -13,7 +13,7 @@ repos:
     rev: 24.10.0  # Version of Black
     hooks:
       - id: black
-        args: ["--line-length", "120"]  # Override default line length to match your preference
+        args: ["--line-length", "150"]  # Override default line length to match your preference
         exclude: "tests/.*|docs/.*"  # Skip formatting for files in `tests` or `docs` folders
 
   # Flake8 for linting Python code
