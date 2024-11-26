@@ -143,7 +143,7 @@ class InfoWindow(QDialog):
         # Info text label
         info_label = QLabel(info_text)
         info_label.setWordWrap(True)
-        info_label.setStyleSheet("color: white; font-size: 12px;")
+        info_label.setStyleSheet("color: #C9D3D5; font-size: 12px;")
         main_layout.addWidget(info_label)
 
         # Spacer to push the separator and button to the bottom

@@ -31,7 +31,7 @@ class FileOrganizerCustomizationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Organize Files")
-        self.setFixedSize(400, 660)
+        self.setFixedSize(400, 600)
 
         # Initialize the checkbox dictionary
         self.checkbox_dict = {}
@@ -50,15 +50,14 @@ class FileOrganizerCustomizationDialog(QDialog):
         # Header section
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
-        header_layout.setContentsMargins(0, 10, 0, 0)  # Adjust top margin to reduce space
-        header_layout.setSpacing(5)
+        header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
         # Icon
         icon_label = QLabel()
         icon_pixmap = QPixmap("assets/photos/file_management.png")  # Icon by Uniconlabs
-        icon_pixmap = icon_pixmap.scaled(43, 43, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setContentsMargins(0, 0, 0, 5)
+        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
 
@@ -79,7 +78,7 @@ class FileOrganizerCustomizationDialog(QDialog):
         # Add a separator line after the header
         separator_line = create_separator()
         layout.addWidget(separator_line)
-        layout.addSpacing(15)
+        layout.addSpacing(5)
 
         # Folder selection section
         folder_layout = QHBoxLayout()
@@ -96,7 +95,7 @@ class FileOrganizerCustomizationDialog(QDialog):
 
         # Sorting Operations Card
         sorting_labels = ["Sort by Type", "Sort by Date", "Sort by Size"]
-        sorting_info_text = "Organize your files effortlessly by type, date, or size. The app will create relevant folders in your target directory and move your files accordingly. \n\nNeed to revert? Use the Undo option to return to the previous state."
+        sorting_info_text = "Organize your files by type, date, or size. The app will create relevant folders in your target directory and move your files accordingly. \n\nNeed to revert? Use the Undo option to return to the previous state."
         sorting_card = self.build_checkbox_card(sorting_labels, info_text=sorting_info_text)
         layout.addWidget(sorting_card)
 
@@ -138,7 +137,7 @@ class FileOrganizerCustomizationDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def build_checkbox_card(self, labels, margins=(10, 15, 10, 15), spacing=5, info_text=""):
+    def build_checkbox_card(self, labels, margins=(10, 10, 10, 10), spacing=3, info_text=""):
         """
         Build a card widget containing checkboxes with the relevant labels and an info icon placed to the right.
         """
@@ -156,7 +155,7 @@ class FileOrganizerCustomizationDialog(QDialog):
             row_widget = QWidget()
             row_layout = QHBoxLayout()
             row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(5)
+            row_layout.setSpacing(0)
 
             # Add checkbox to the layout
             row_layout.addWidget(checkbox)

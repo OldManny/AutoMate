@@ -90,8 +90,8 @@ QWidget[class="card"] {
     background-color: #333333;
     border: 1px solid #4f4f4f;
     border-radius: 8px;
-    margin: 5px 0px;
-    padding: 10px 10px;
+    margin: 1px 0px;
+    padding: 8px 8px;
 }
 """
 
