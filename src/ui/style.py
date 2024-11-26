@@ -113,7 +113,7 @@ QFrame {
 # Style for InfoWindow's central widget
 INFO_WINDOW_STYLE = """
 QWidget#central_widget {
-    background-color: #2E3030;
+    background-color: #333333;
     border-radius: 10px;
     border: 1px solid #4f4f4f;
 }
