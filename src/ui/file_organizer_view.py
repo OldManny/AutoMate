@@ -1,9 +1,28 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QCheckBox, QDesktopWidget, QDialog, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QDesktopWidget,
+    QDialog,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
-from src.ui.components import create_blue_button, create_card, create_folder_icon_button, create_folder_input, create_gray_button, create_separator
+from src.ui.components import (
+    InfoWindow,
+    create_blue_button,
+    create_card,
+    create_folder_icon_button,
+    create_folder_input,
+    create_gray_button,
+    create_info_icon_button,
+    create_separator,
+)
 from src.ui.style import FILE_ORGANIZER_DIALOG_STYLE
 
 
@@ -12,7 +31,7 @@ class FileOrganizerCustomizationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Organize Files")
-        self.setFixedSize(400, 620)
+        self.setFixedSize(400, 660)
 
         # Initialize the checkbox dictionary
         self.checkbox_dict = {}
@@ -77,20 +96,28 @@ class FileOrganizerCustomizationDialog(QDialog):
 
         # Sorting Operations Card
         sorting_labels = ["Sort by Type", "Sort by Date", "Sort by Size"]
-        sorting_card = self.build_checkbox_card(sorting_labels)
+        sorting_info_text = "Organize your files effortlessly by type, date, or size. The app will create relevant folders in your target directory and move your files accordingly. \n\nNeed to revert? Use the Undo option to return to the previous state."
+        sorting_card = self.build_checkbox_card(sorting_labels, info_text=sorting_info_text)
         layout.addWidget(sorting_card)
 
         # Detect Duplicates Card
-        detect_duplicates_card = self.build_checkbox_card(["Detect Duplicates"])
+        detect_duplicates_labels = ["Detect Duplicates"]
+        detect_duplicates_info_text = "Identify and manage duplicate files by comparing their unique hashes. \n\nAll duplicates are relocated to a dedicated folder, helping you keep your storage clean and organized."
+        detect_duplicates_card = self.build_checkbox_card(
+            detect_duplicates_labels, info_text=detect_duplicates_info_text
+        )
         layout.addWidget(detect_duplicates_card)
 
         # Rename Files Card
-        rename_files_card = self.build_checkbox_card(["Rename Files"])
+        rename_files_labels = ["Rename Files"]
+        rename_files_info_text = "Rename your files by appending the date and hour of the operation. \n\nThis ensures each file name is unique and time-stamped for better organization."
+        rename_files_card = self.build_checkbox_card(rename_files_labels, info_text=rename_files_info_text)
         layout.addWidget(rename_files_card)
 
         # Compress and Backup Files Card
         management_labels = ["Compress Files", "Backup Files"]
-        management_card = self.build_checkbox_card(management_labels)
+        management_info_text = "Compress or back up your files in one step. \n\nCreate ZIP archives to save space and simplify sharing, while also you can copy your important data to a backup folder to ensure they're safely stored."
+        management_card = self.build_checkbox_card(management_labels, info_text=management_info_text)
         layout.addWidget(management_card)
 
         # Button layout
@@ -111,28 +138,64 @@ class FileOrganizerCustomizationDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def build_checkbox_card(self, labels, margins=(10, 15, 10, 15), spacing=5):
+    def build_checkbox_card(self, labels, margins=(10, 15, 10, 15), spacing=5, info_text=""):
         """
-        Build a card widget containing checkboxes with the relevant labels.
+        Build a card widget containing checkboxes with the relevant labels and an info icon placed to the right.
         """
-        checkboxes = []
-        for label in labels:
+
+        content_widgets = []
+
+        # Loop through all labels to create checkboxes
+        for idx, label in enumerate(labels):
             checkbox = QCheckBox(label)
             checkbox.stateChanged.connect(lambda state, cb=checkbox: self.single_selection(cb))
             self.checkboxes.append(checkbox)
-            checkboxes.append(checkbox)
             self.checkbox_dict[label] = checkbox  # Store in dictionary
 
-        # Create content widgets with separators
-        content_widgets = []
-        for idx, checkbox in enumerate(checkboxes):
-            content_widgets.append(checkbox)
-            if idx < len(checkboxes) - 1:
+            # Create a horizontal layout for each checkbox and info icon
+            row_widget = QWidget()
+            row_layout = QHBoxLayout()
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(5)
+
+            # Add checkbox to the layout
+            row_layout.addWidget(checkbox)
+
+            # For the first checkbox, add the info icon to the right
+            if idx == 0:
+                # Spacer to push the info icon to the right
+                row_layout.addStretch()
+
+                # Create info icon button
+                info_button = create_info_icon_button()
+                # Connect the info button to show info window
+                info_button.clicked.connect(lambda _, text=info_text: self.show_info_window(text))
+
+                # Add info button to the layout
+                row_layout.addWidget(info_button)
+
+            row_widget.setLayout(row_layout)
+            content_widgets.append(row_widget)
+
+            # Add separator if not the last checkbox
+            if idx < len(labels) - 1:
                 content_widgets.append(create_separator())
 
         # Create and return the card
         card = create_card(content_widgets, margins=margins, spacing=spacing)
         return card
+
+    def show_info_window(self, info_text):
+        """
+        Displays an info window with the provided information text.
+        """
+        self.info_window = InfoWindow(info_text, parent=self)
+        # Center the info window over the parent dialog
+        parent_center = self.geometry().center()
+        window_geometry = self.info_window.frameGeometry()
+        window_geometry.moveCenter(parent_center)
+        self.info_window.move(window_geometry.topLeft())
+        self.info_window.show()
 
     def on_run_clicked(self):
         """
@@ -144,18 +207,17 @@ class FileOrganizerCustomizationDialog(QDialog):
             return
 
         try:
+            # If an operation is checked, run that operation
             if any(checkbox.isChecked() for checkbox in self.checkboxes):
-                if self.checkbox_dict["Sort by Type"].isChecked():
+                if self.checkbox_dict.get("Sort by Type", None) and self.checkbox_dict["Sort by Type"].isChecked():
                     sort_by_type(folder_path)
                     self.parent().update_status("Files sorted by type successfully.")
-                elif self.checkbox_dict["Sort by Date"].isChecked():
+                elif self.checkbox_dict.get("Sort by Date", None) and self.checkbox_dict["Sort by Date"].isChecked():
                     sort_by_date(folder_path)
                     self.parent().update_status("Files sorted by date successfully.")
-                elif self.checkbox_dict["Sort by Size"].isChecked():
+                elif self.checkbox_dict.get("Sort by Size", None) and self.checkbox_dict["Sort by Size"].isChecked():
                     sort_by_size(folder_path)
                     self.parent().update_status("Files sorted by size successfully.")
-                else:
-                    self.parent().update_status("Please select an operation to run.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:

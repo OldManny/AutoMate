@@ -3,26 +3,26 @@
 # Style for blue-colored buttons
 BLUE_BUTTON_STYLE = """
 QPushButton {
-    background-color: #007BFF;  /* Blue background */
-    color: white;  /* White text color */
-    border: none;  /* Remove default border */
-    border-radius: 7px;  /* Rounded corners */
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 7px;
 }
 QPushButton:hover {
-    background-color: #0056b3;  /* Darker blue when hover */
+    background-color: #0056b3;
 }
 """
 
 # Style for gray-colored buttons
 GRAY_BUTTON_STYLE = """
 QPushButton {
-    background-color: #6c757d;  /* Gray background */
-    color: white;  /* White text color */
-    border: none;  /* Remove default border */
-    border-radius: 7px;  /* Rounded corners */
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 7px;
 }
 QPushButton:hover {
-    background-color: #5a6268;  /* Darker gray when hover */
+    background-color: #5a6268;
 }
 """
 
@@ -31,10 +31,10 @@ QPushButton:hover {
 # Style for folder input fields
 FOLDER_INPUT_STYLE = """
 QLineEdit {
-    background-color: #6c757d;  /* Dark gray background */
-    color: white;  /* White text color */
-    border-radius: 13px;  /* Rounded corners */
-    padding: 4px;  /* Padding for spacing */
+    background-color: #6c757d;
+    color: white;
+    border-radius: 13px;
+    padding: 4px;
     padding-left: 12px;
 }
 """
@@ -44,13 +44,13 @@ QLineEdit {
 # Style buttons in the MainApp with a green color
 MAIN_APP_BUTTON_STYLE = """
 QPushButton {
-    background-color: #4CAF50;  /* Green background */
-    color: white;  /* White text color */
-    border: none;  /* Remove default border */
-    border-radius: 5px;  /* Rounded corners */
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
 }
 QPushButton:hover {
-    background-color: #45a049;  /* Darker green on hover */
+    background-color: #45a049;
 }
 """
 
@@ -59,10 +59,10 @@ QPushButton:hover {
 # Style for QTextEdit areas - status display
 STATUS_AREA_STYLE = """
 QTextEdit {
-    color: white;  /* White text color for readability */
-    background-color: #2c2c2c;  /* Dark background for contrast */
-    border: none;  /* Remove default border */
-    padding: 5px;  /* Padding for inner spacing */
+    color: white;
+    background-color: #2c2c2c;
+    border: none;
+    padding: 5px;
 }
 """
 
@@ -88,10 +88,10 @@ QCheckBox::indicator {
 CARD_STYLE = """
 QWidget[class="card"] {
     background-color: #333333;
-    border: 1px solid #4f4f4f;  /* Dark border */
+    border: 1px solid #4f4f4f;
     border-radius: 8px;
     margin: 5px 0px;
-    padding: 10px 10px;  /* Padding to add space at top and bottom */
+    padding: 10px 10px;
 }
 """
 
@@ -107,5 +107,14 @@ QFrame {
     );
     margin-left: 10px;
     margin-right: 10px;
+}
+"""
+
+# Style for InfoWindow's central widget
+INFO_WINDOW_STYLE = """
+QWidget#central_widget {
+    background-color: #2E3030;
+    border-radius: 10px;
+    border: 1px solid #4f4f4f;
 }
 """
