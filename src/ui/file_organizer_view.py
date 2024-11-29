@@ -15,15 +15,14 @@ from PyQt5.QtWidgets import (
 from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
 from src.ui.components import (
     InfoWindow,
-    create_blue_button,
+    ScheduleModalWindow,
+    create_button,
     create_card,
-    create_folder_icon_button,
     create_folder_input,
-    create_gray_button,
-    create_info_icon_button,
+    create_icon_button,
     create_separator,
 )
-from src.ui.style import FILE_ORGANIZER_DIALOG_STYLE
+from src.ui.style import BLUE_BUTTON_STYLE, FILE_ORGANIZER_DIALOG_STYLE, GRAY_BUTTON_STYLE, GREEN_BUTTON_STYLE
 
 
 # Dialog class for configuring file organization options
@@ -85,7 +84,12 @@ class FileOrganizerCustomizationDialog(QDialog):
         self.folder_input = create_folder_input()
         folder_layout.addWidget(self.folder_input)
 
-        self.folder_icon_btn = create_folder_icon_button()
+        self.folder_icon_btn = create_icon_button(
+            icon_path="assets/photos/folder.png",
+            icon_size=(25, 25),
+            button_size=(30, 30),
+        )
+
         self.folder_icon_btn.clicked.connect(self.select_folder)
         folder_layout.addWidget(self.folder_icon_btn)
         layout.addLayout(folder_layout)
@@ -119,22 +123,31 @@ class FileOrganizerCustomizationDialog(QDialog):
         management_card = self.build_checkbox_card(management_labels, info_text=management_info_text)
         layout.addWidget(management_card)
 
-        # Button layout
+        # Button layout for main interface buttons
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(10)
+
+        # Schedule Button aligned to the left
+        self.schedule_btn = create_button("Auto", GREEN_BUTTON_STYLE, size=(50, 30))
+        self.schedule_btn.clicked.connect(self.open_schedule_modal)
+        button_layout.addWidget(self.schedule_btn, alignment=Qt.AlignLeft)
+
+        # Spacer to push Undo and Run buttons to the right
         button_layout.addStretch()
 
         # Undo button using reusable component
-        self.undo_btn = create_gray_button("Undo")
+        self.undo_btn = create_button("Undo", GRAY_BUTTON_STYLE)
         self.undo_btn.clicked.connect(self.on_undo_clicked)
         button_layout.addWidget(self.undo_btn)
 
         # Run button using reusable component
-        self.run_btn = create_blue_button("Run")
+        self.run_btn = create_button("Run", BLUE_BUTTON_STYLE)
         self.run_btn.clicked.connect(self.on_run_clicked)
         button_layout.addWidget(self.run_btn)
 
-        # Add buttons to main layout
+        # Add the button layout to the main layout
         layout.addLayout(button_layout)
+
         self.setLayout(layout)
 
     def build_checkbox_card(self, labels, margins=(10, 10, 10, 10), spacing=3, info_text=""):
@@ -166,7 +179,11 @@ class FileOrganizerCustomizationDialog(QDialog):
                 row_layout.addStretch()
 
                 # Create info icon button
-                info_button = create_info_icon_button()
+                info_button = create_icon_button(
+                    icon_path="assets/photos/info.png",
+                    icon_size=(16, 16),
+                    button_size=(20, 20),
+                )
                 # Connect the info button to show info window
                 info_button.clicked.connect(lambda _, text=info_text: self.show_info_window(text))
 
@@ -223,6 +240,42 @@ class FileOrganizerCustomizationDialog(QDialog):
             self.parent().update_status(str(e))
         except Exception as e:
             self.parent().update_status(f"An unexpected error occurred: {str(e)}")
+
+    def open_schedule_modal(self):
+        """
+        Opens the Schedule Modal Window for setting automation schedules.
+        """
+        schedule_modal = ScheduleModalWindow(self)  # Pass self as the parent
+        # Center the modal relative to the FileOrganizerCustomizationDialog
+        parent_center = self.geometry().center()
+        modal_geometry = schedule_modal.frameGeometry()
+        modal_geometry.moveCenter(parent_center)
+        schedule_modal.move(modal_geometry.topLeft())
+
+        result = schedule_modal.exec_()
+        if result == QDialog.Accepted:
+            # Retrieve the scheduled time and days
+            scheduled_time = schedule_modal.time_edit.time().toString("HH:mm")
+            selected_days = [day for day, btn in schedule_modal.day_buttons.items() if btn.isChecked()]
+            # Update status or handle the scheduling as needed
+            self.update_status(f"Scheduled at {scheduled_time} on: {', '.join(selected_days)}.")
+
+    def center_modal(self, modal):
+        """
+        Centers the given modal relative to the parent window.
+        """
+        if self.parent():
+            parent_geometry = self.parent().frameGeometry()
+            parent_center = parent_geometry.center()
+            modal_geometry = modal.frameGeometry()
+            modal_geometry.moveCenter(parent_center)
+            modal.move(modal_geometry.topLeft())
+        else:
+            # Fallback to centering on the screen if no parent is set
+            screen_center = QDesktopWidget().availableGeometry().center()
+            modal_geometry = modal.frameGeometry()
+            modal_geometry.moveCenter(screen_center)
+            modal.move(modal_geometry.topLeft())
 
     def select_folder(self):
         """Opens a folder dialog to select a directory, displaying the selected path in the input field."""

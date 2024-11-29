@@ -1,35 +1,39 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize, Qt, QTime
 from PyQt5.QtGui import QCursor, QIcon
-from PyQt5.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
+from .base_modal import BaseModalWindow
 from .style import (
     BLUE_BUTTON_STYLE,
     CARD_STYLE,
+    DAY_BUTTON_STYLE,
     FOLDER_INPUT_STYLE,
     GRAY_BUTTON_STYLE,
     INFO_WINDOW_STYLE,
+    INSTRUCTION_LABEL_STYLE,
     SEPARATOR_STYLE,
+    TIME_PICKER_STYLE,
 )
 
 
-def create_blue_button(text):
+def create_button(text, style_sheet, size=(80, 30)):
     """
-    Creates a QPushButton styled as a blue button with a fixed size.
-    """
-    button = QPushButton(text)
-    button.setFixedSize(79, 27)
-    button.setStyleSheet(BLUE_BUTTON_STYLE)
-    button.setCursor(Qt.PointingHandCursor)
-    return button
-
-
-def create_gray_button(text):
-    """
-    Creates a QPushButton styled as a gray button with a fixed size.
+    Creates a QPushButton with the given text, style sheet, and size.
     """
     button = QPushButton(text)
-    button.setFixedSize(79, 27)
-    button.setStyleSheet(GRAY_BUTTON_STYLE)
+    button.setFixedSize(*size)
+    button.setStyleSheet(style_sheet)
     button.setCursor(Qt.PointingHandCursor)
     return button
 
@@ -46,32 +50,26 @@ def create_folder_input():
     return folder_input
 
 
-def create_folder_icon_button(
-    icon_path="assets/photos/folder.png",
-):  # Folder icon sourced from Freepik - Flaticon
+def create_icon_button(
+    icon_path,
+    icon_size=(24, 24),
+    button_size=(30, 30),
+    tooltip=None,
+    cursor=Qt.PointingHandCursor,
+    style_sheet="border: none;",
+):
     """
-    Creates a QPushButton with an icon, styled as an icon-only button for folder selection.
+    Creates a QPushButton with an icon, styled as an icon-only button.
     """
     icon_btn = QPushButton()
     icon_btn.setIcon(QIcon(icon_path))
-    icon_btn.setFixedSize(30, 30)
-    icon_btn.setIconSize(QSize(25, 25))
-    icon_btn.setCursor(QCursor(Qt.PointingHandCursor))
-    icon_btn.setStyleSheet("border: none;")
+    icon_btn.setFixedSize(*button_size)
+    icon_btn.setIconSize(QSize(*icon_size))
+    icon_btn.setCursor(cursor)
+    icon_btn.setStyleSheet(style_sheet)
+    if tooltip:
+        icon_btn.setToolTip(tooltip)
     return icon_btn
-
-
-def create_info_icon_button(icon_path="assets/photos/info.png"):
-    """
-    Creates a QPushButton with an info icon, styled as an icon-only button for displaying information.
-    """
-    info_btn = QPushButton()
-    info_btn.setIcon(QIcon(icon_path))
-    info_btn.setFixedSize(20, 20)
-    info_btn.setIconSize(QSize(16, 16))
-    info_btn.setCursor(QCursor(Qt.PointingHandCursor))
-    info_btn.setStyleSheet("border: none;")
-    return info_btn
 
 
 def create_separator():
@@ -114,60 +112,130 @@ def create_card(content_widgets, class_name="card", margins=(10, 10, 10, 10), sp
     return card
 
 
-class InfoWindow(QDialog):
+def create_day_button(letter):
     """
-    Pop-up window without title bar and with rounded corners.
+    Creates a QPushButton styled as a day selection button with the given letter.
+    """
+    button = QPushButton(letter)
+    button.setFixedSize(40, 40)
+    button.setCheckable(True)
+    button.setStyleSheet(DAY_BUTTON_STYLE)
+    button.setCursor(QCursor(Qt.PointingHandCursor))
+    return button
+
+
+# -------------------- Modal Windows --------------------
+
+
+class ScheduleModalWindow(BaseModalWindow):
+    """
+    Modal window for scheduling automation operations with time and day selection.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(width=400, height=400, style_sheet=INFO_WINDOW_STYLE, parent=parent)
+
+        # Time Picker Section
+        self.time_edit = QTimeEdit()
+        self.time_edit.setDisplayFormat("HH:mm")
+        self.time_edit.setTime(QTime.currentTime())
+        self.time_edit.setFixedSize(145, 69)
+        self.time_edit.setStyleSheet(TIME_PICKER_STYLE)
+        self.time_edit.lineEdit().setAlignment(Qt.AlignCenter)
+        self.time_edit.setFocusPolicy(Qt.ClickFocus)
+        time_card = create_card([self.time_edit], margins=(0, 0, 0, 0), spacing=0)
+        self.add_widget(time_card, alignment=Qt.AlignHCenter)
+
+        self.main_layout.addSpacing(20)
+
+        # Days Selection Section
+        days_layout = QHBoxLayout()
+        days_layout.setSpacing(5)
+        self.day_buttons = {}
+        days = ["M", "T", "W", "T", "F", "S", "S"]
+        full_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        for abbr, full in zip(days, full_days):
+            button = create_day_button(abbr)
+            button.setToolTip(full)
+            self.day_buttons[full] = button
+            days_layout.addWidget(button)
+        self.add_layout(days_layout)
+
+        # Add Stretch Before Instruction Label
+        self.main_layout.addStretch()
+
+        # Instructional Label
+        instruction_label = QLabel("Schedule an automation by setting the time \nand selecting the recurring days.")
+        instruction_label.setStyleSheet(INSTRUCTION_LABEL_STYLE)
+        instruction_label.setAlignment(Qt.AlignCenter)
+        instruction_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        self.add_widget(instruction_label)
+
+        # Spacer to Push Buttons to Bottom
+        self.main_layout.addStretch()
+
+        #  Separator
+        self.add_widget(create_separator())
+
+        # Action Buttons
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(10)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addStretch()
+
+        cancel_button = create_button("Cancel", GRAY_BUTTON_STYLE)
+        cancel_button.setFixedSize(80, 30)
+        cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_button)
+
+        save_button = create_button("Save", BLUE_BUTTON_STYLE)
+        save_button.setFixedSize(80, 30)
+        save_button.clicked.connect(self.save_schedule)
+        button_layout.addWidget(save_button)
+
+        self.add_layout(button_layout, alignment=Qt.AlignRight)
+
+    def save_schedule(self):
+        """Saves the selected time and days to set an automation schedule."""
+        selected_time = self.time_edit.time().toString("HH:mm")
+        selected_days = [day for day, btn in self.day_buttons.items() if btn.isChecked()]
+        if not selected_days:
+            QMessageBox.warning(self, "No Days Selected", "Please select at least one day.")
+            return
+        confirmation_message = f"Scheduled at {selected_time} on: {', '.join(selected_days)}."
+        QMessageBox.information(self, "Schedule Set", confirmation_message)
+        self.accept()
+
+
+class InfoWindow(BaseModalWindow):
+    """
+    Pop-up window to display informational text.
     """
 
     def __init__(self, info_text, parent=None):
-        super().__init__(parent)
-        self.setModal(True)
-        self.setFixedSize(370, 200)
-
-        # Remove title bar and window buttons
-        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-
-        # Enable translucent background for rounded corners
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-        # Central widget with styling from style.py
-        central_widget = QWidget(self)
-        central_widget.setObjectName("central_widget")
-        central_widget.setStyleSheet(INFO_WINDOW_STYLE)
-
-        # Main layout for the central widget
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(10)
+        super().__init__(width=370, height=200, style_sheet=INFO_WINDOW_STYLE, parent=parent)
 
         # Info text label
         info_label = QLabel(info_text)
         info_label.setWordWrap(True)
         info_label.setStyleSheet("color: #C9D3D5; font-size: 12px;")
-        main_layout.addWidget(info_label)
+        self.add_widget(info_label)
 
-        # Spacer to push the separator and button to the bottom
-        main_layout.addStretch()
+        # Spacer to push elements to the bottom
+        self.main_layout.addStretch()
 
         # Separator line above the button
-        separator = create_separator()
-        main_layout.addWidget(separator)
+        self.add_widget(create_separator())
 
         # 'Done' button aligned to the bottom right
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(5)
+        button_layout.setContentsMargins(0, 0, 0, 0)
         button_layout.addStretch()
 
-        # Create a custom-sized blue button
-        done_button = QPushButton("Done")
-        done_button.setCursor(QCursor(Qt.PointingHandCursor))
+        done_button = create_button("Done", BLUE_BUTTON_STYLE)
         done_button.setStyleSheet(BLUE_BUTTON_STYLE)
         done_button.setFixedSize(77, 23)
         done_button.clicked.connect(self.accept)
         button_layout.addWidget(done_button)
-
-        main_layout.addLayout(button_layout)
-
-        # Set layout for the dialog
-        dialog_layout = QVBoxLayout(self)
-        dialog_layout.setContentsMargins(0, 0, 0, 0)
-        dialog_layout.addWidget(central_widget)
+        self.add_layout(button_layout, alignment=Qt.AlignRight)

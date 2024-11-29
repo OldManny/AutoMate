@@ -26,6 +26,19 @@ QPushButton:hover {
 }
 """
 
+# Style for green-colored buttons
+GREEN_BUTTON_STYLE = """
+QPushButton {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 7px;
+}
+QPushButton:hover {
+    background-color: #5a6268;
+}
+"""
+
 ################ Input Field Style ################
 
 # Style for folder input fields
@@ -116,5 +129,48 @@ QWidget#central_widget {
     background-color: #333333;
     border-radius: 10px;
     border: 1px solid #4f4f4f;
+}
+"""
+
+################ Day Button Styles ################
+
+DAY_BUTTON_STYLE = """
+QPushButton {
+    background-color: #555555;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+}
+QPushButton:checked {
+    background-color: #007BFF;
+}
+"""
+
+################ Time Picker Style ################
+
+TIME_PICKER_STYLE = """
+QTimeEdit {
+    background-color: #6c757d;
+    color: white;
+    border-radius: 10px;
+    font-size: 50px;
+}
+QTimeEdit::up-button, QTimeEdit::down-button {
+    width: 0px;
+    height: 0px;
+    border: none;
+    background: none;
+}
+QTimeEdit::up-arrow, QTimeEdit::down-arrow {
+    image: none;
+}
+"""
+################ Instructional Label Style ################
+
+INSTRUCTION_LABEL_STYLE = """
+QLabel {
+    color: #C9D3D5;
+    font-size: 12px;
 }
 """
