@@ -1,4 +1,5 @@
 from datetime import datetime
+import hashlib
 import json
 import os
 import shutil
@@ -169,6 +170,76 @@ def sort_by_size(source_directory):
             json.dump({"operations": operation_log, "folders": list(folders_to_create)}, log_file)
     else:
         raise ValueError("No files were moved. Nothing to undo.")
+
+
+def detect_duplicates(source_directory):
+    """
+    Identifies and moves duplicate files in the specified directory into a 'duplicates' folder.
+    Logs changes for undo functionality.
+
+    Parameters:
+        source_directory (str): Path to the directory to scan for duplicates.
+
+    Raises:
+        ValueError: If the directory does not exist or no duplicates are found.
+    """
+    if not os.path.exists(source_directory):
+        raise ValueError(f"The directory '{source_directory}' does not exist.")
+
+    # Dictionary to track files by hash
+    file_hashes = {}
+    operation_log = []  # Log of moved files
+    duplicates_folder = os.path.join(source_directory, "duplicates")
+
+    for root, _, files in os.walk(source_directory, topdown=True):
+        for file in files:
+            if file.startswith("."):  # Skip hidden files
+                continue
+
+            file_path = os.path.join(root, file)
+
+            # Compute the hash of the file
+            file_hash = hash_file(file_path)
+
+            if file_hash in file_hashes:
+                # If duplicate is found, move it to the duplicates folder
+                if not os.path.exists(duplicates_folder):
+                    os.makedirs(duplicates_folder)
+                new_path = os.path.join(duplicates_folder, file)
+                shutil.move(file_path, new_path)
+
+                # Log the operation for Undo functionality
+                operation_log.append({"original": file_path, "new": new_path})
+            else:
+                # Add the file to the hash dictionary
+                file_hashes[file_hash] = file_path
+
+    # Write the operation log to a JSON file
+    if operation_log:
+        with open(LOG_FILE, "w") as log_file:
+            json.dump({"operations": operation_log, "folders": [duplicates_folder]}, log_file)
+    else:
+        raise ValueError("No duplicates found. Nothing to undo.")
+
+
+def hash_file(file_path):
+    """
+    Computes the SHA256 hash of a file's content.
+
+    Parameters:
+        file_path (str): Path to the file to hash.
+
+    Returns:
+        str: SHA256 hash of the file content.
+    """
+    BUF_SIZE = 65536  # Read in chunks of 64KB
+    sha256 = hashlib.sha256()
+
+    with open(file_path, "rb") as f:
+        while chunk := f.read(BUF_SIZE):
+            sha256.update(chunk)
+
+    return sha256.hexdigest()
 
 
 def undo_last_operation():

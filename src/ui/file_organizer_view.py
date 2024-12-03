@@ -12,7 +12,13 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from src.automation.file_organizer import sort_by_date, sort_by_size, sort_by_type, undo_last_operation
+from src.automation.file_organizer import (
+    detect_duplicates,
+    sort_by_date,
+    sort_by_size,
+    sort_by_type,
+    undo_last_operation,
+)
 from src.ui.components import (
     InfoWindow,
     ScheduleModalWindow,
@@ -234,6 +240,12 @@ class FileOrganizerCustomizationDialog(QDialog):
                 elif self.checkbox_dict.get("Sort by Size", None) and self.checkbox_dict["Sort by Size"].isChecked():
                     sort_by_size(folder_path)
                     self.parent().update_status("Files sorted by size successfully.")
+                elif (
+                    self.checkbox_dict.get("Detect Duplicates", None)
+                    and self.checkbox_dict["Detect Duplicates"].isChecked()
+                ):
+                    detect_duplicates(folder_path)
+                    self.parent().update_status("Duplicate files detected and moved successfully.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
