@@ -177,11 +177,6 @@ def detect_duplicates(source_directory):
     Identifies and moves duplicate files in the specified directory into a 'duplicates' folder.
     Logs changes for undo functionality.
 
-    Parameters:
-        source_directory (str): Path to the directory to scan for duplicates.
-
-    Raises:
-        ValueError: If the directory does not exist or no duplicates are found.
     """
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
@@ -226,11 +221,6 @@ def hash_file(file_path):
     """
     Computes the SHA256 hash of a file's content.
 
-    Parameters:
-        file_path (str): Path to the file to hash.
-
-    Returns:
-        str: SHA256 hash of the file content.
     """
     BUF_SIZE = 65536  # Read in chunks of 64KB
     sha256 = hashlib.sha256()
@@ -240,6 +230,44 @@ def hash_file(file_path):
             sha256.update(chunk)
 
     return sha256.hexdigest()
+
+
+def rename_files(source_directory):
+    """
+    Renames files in the specified directory by appending a timestamp
+    to their names, ensuring uniqueness and logging changes for Undo.
+
+    """
+    if not os.path.exists(source_directory):
+        raise ValueError(f"The directory '{source_directory}' does not exist.")
+
+    operation_log = []  # List to store renaming operations
+
+    for root, dirs, files in os.walk(source_directory, topdown=True):
+        # Skip hidden directories
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
+
+        for file in files:
+            if file.startswith('.'):
+                continue  # Skip hidden files
+
+            file_path = os.path.join(root, file)
+            file_name, file_ext = os.path.splitext(file)
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H.%M")
+            new_name = f"{file_name}_{timestamp}{file_ext}"
+            new_path = os.path.join(root, new_name)
+
+            os.rename(file_path, new_path)  # Rename the file
+
+            # Log the operation for Undo
+            operation_log.append({"original": file_path, "new": new_path})
+
+    # Write the operation log to a JSON file
+    if operation_log:
+        with open(LOG_FILE, "w") as log_file:
+            json.dump({"operations": operation_log}, log_file)
+    else:
+        raise ValueError("No files were renamed. Nothing to undo.")
 
 
 def undo_last_operation():

@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
 
 from src.automation.file_organizer import (
     detect_duplicates,
+    rename_files,
     sort_by_date,
     sort_by_size,
     sort_by_type,
@@ -246,6 +247,9 @@ class FileOrganizerCustomizationDialog(QDialog):
                 ):
                     detect_duplicates(folder_path)
                     self.parent().update_status("Duplicate files detected and moved successfully.")
+                elif self.checkbox_dict.get("Rename Files", None) and self.checkbox_dict["Rename Files"].isChecked():
+                    rename_files(folder_path)
+                    self.parent().update_status("Files renamed successfully.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
