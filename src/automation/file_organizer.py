@@ -276,37 +276,35 @@ def compress_files(source_directory):
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
 
-    operation_log = []  # Log for Undo
     archive_name = os.path.join(source_directory, "compressed_files.zip")
 
+    # Store file timestamps to preserve them
+    file_timestamps = {}
+
+    # Gather files and their timestamps
+    for root, _, files in os.walk(source_directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if file_path != archive_name:  # Avoid compressing the archive itself
+                stat_info = os.stat(file_path)
+                file_timestamps[file_path] = (stat_info.st_atime, stat_info.st_mtime)
+
     with zipfile.ZipFile(archive_name, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=1) as zipf:
-        for root, _, files in os.walk(source_directory, topdown=True):
-            for file in files:
-                if file.startswith("."):
-                    continue  # Skip hidden files
+        for file_path in file_timestamps.keys():
+            arcname = os.path.relpath(file_path, source_directory)  # Relative path for archive
+            zipf.write(file_path, arcname)
 
-                file_path = os.path.join(root, file)
+    # Delete original files after compression
+    for file_path in file_timestamps.keys():
+        os.remove(file_path)
 
-                # Avoid adding the archive itself during compression
-                if file_path == archive_name:
-                    continue
-
-                arcname = os.path.relpath(file_path, source_directory)
-                zipf.write(file_path, arcname)  # Add file to archive
-                operation_log.append({"original": file_path, "compressed": archive_name})
-
-    # Remove original files after successful compression
-    for entry in operation_log:
-        os.remove(entry["original"])
-
-    # Log operation details for Undo
-    if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "compressed_archive": archive_name}, log_file)
-    else:
-        if os.path.exists(archive_name):
-            os.remove(archive_name)
-        raise ValueError("No files were compressed. Nothing to undo.")
+    # Log the operation
+    log_data = {
+        "compressed_archive": archive_name,
+        "file_timestamps": file_timestamps,  # Log timestamps for restoration
+    }
+    with open(LOG_FILE, "w") as log_file:
+        json.dump(log_data, log_file)
 
 
 def undo_last_operation():
@@ -326,11 +324,16 @@ def undo_last_operation():
     # Check the type of operation logged
     operations = log_data.get("operations", [])
     compressed_archive = log_data.get("compressed_archive", None)
+    file_timestamps = log_data.get("file_timestamps", {})
 
-    if compressed_archive:  # Handle Undo for Compression
-        # Decompress the archive
+    if compressed_archive:  # Undo Compression
         with zipfile.ZipFile(compressed_archive, 'r') as zipf:
             zipf.extractall(os.path.dirname(compressed_archive))
+
+        # Restore original timestamps
+        for file_path, (atime, mtime) in file_timestamps.items():
+            if os.path.exists(file_path):
+                os.utime(file_path, (atime, mtime))  # Restore access and modification times
 
         # Remove the compressed archive
         if os.path.exists(compressed_archive):
