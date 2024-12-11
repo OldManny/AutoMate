@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
 )
 
 from src.automation.file_organizer import (
+    compress_files,
     detect_duplicates,
     rename_files,
     sort_by_date,
@@ -250,6 +251,11 @@ class FileOrganizerCustomizationDialog(QDialog):
                 elif self.checkbox_dict.get("Rename Files", None) and self.checkbox_dict["Rename Files"].isChecked():
                     rename_files(folder_path)
                     self.parent().update_status("Files renamed successfully.")
+                elif (
+                    self.checkbox_dict.get("Compress Files", None) and self.checkbox_dict["Compress Files"].isChecked()
+                ):
+                    compress_files(folder_path)
+                    self.parent().update_status("Files compressed successfully.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:

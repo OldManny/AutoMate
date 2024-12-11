@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import shutil
+import zipfile
 
 LOG_FILE = "operation_log.json"
 
@@ -176,7 +177,6 @@ def detect_duplicates(source_directory):
     """
     Identifies and moves duplicate files in the specified directory into a 'duplicates' folder.
     Logs changes for undo functionality.
-
     """
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
@@ -220,7 +220,6 @@ def detect_duplicates(source_directory):
 def hash_file(file_path):
     """
     Computes the SHA256 hash of a file's content.
-
     """
     BUF_SIZE = 65536  # Read in chunks of 64KB
     sha256 = hashlib.sha256()
@@ -236,7 +235,6 @@ def rename_files(source_directory):
     """
     Renames files in the specified directory by appending a timestamp
     to their names, ensuring uniqueness and logging changes for Undo.
-
     """
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
@@ -270,36 +268,90 @@ def rename_files(source_directory):
         raise ValueError("No files were renamed. Nothing to undo.")
 
 
+def compress_files(source_directory):
+    """
+    Compresses all files in the specified directory into a single ZIP archive,
+    removes the original files after compression, and logs changes for Undo.
+    """
+    if not os.path.exists(source_directory):
+        raise ValueError(f"The directory '{source_directory}' does not exist.")
+
+    operation_log = []  # Log for Undo
+    archive_name = os.path.join(source_directory, "compressed_files.zip")
+
+    with zipfile.ZipFile(archive_name, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=1) as zipf:
+        for root, _, files in os.walk(source_directory, topdown=True):
+            for file in files:
+                if file.startswith("."):
+                    continue  # Skip hidden files
+
+                file_path = os.path.join(root, file)
+
+                # Avoid adding the archive itself during compression
+                if file_path == archive_name:
+                    continue
+
+                arcname = os.path.relpath(file_path, source_directory)
+                zipf.write(file_path, arcname)  # Add file to archive
+                operation_log.append({"original": file_path, "compressed": archive_name})
+
+    # Remove original files after successful compression
+    for entry in operation_log:
+        os.remove(entry["original"])
+
+    # Log operation details for Undo
+    if operation_log:
+        with open(LOG_FILE, "w") as log_file:
+            json.dump({"operations": operation_log, "compressed_archive": archive_name}, log_file)
+    else:
+        if os.path.exists(archive_name):
+            os.remove(archive_name)
+        raise ValueError("No files were compressed. Nothing to undo.")
+
+
 def undo_last_operation():
     """
     Reverts the last file organization operation by using the operation log.
-    Ensures files are moved back to their original locations and removes empty folders.
+    Ensures files are moved back to their original locations and removes
+    any created folders or archives.
     """
+    # Check if the log file exists
     if not os.path.exists(LOG_FILE):
         raise ValueError("No operation log found. Nothing to undo.")
 
-    # Load the operation log
+    # Load the operation log from the JSON file
     with open(LOG_FILE, "r") as log_file:
         log_data = json.load(log_file)
 
-    # Retrieve operations and folders from the log
-    operation_log = log_data.get("operations", [])
-    folders_to_remove = log_data.get("folders", [])
+    # Check the type of operation logged
+    operations = log_data.get("operations", [])
+    compressed_archive = log_data.get("compressed_archive", None)
 
-    # Undo each operation by moving files back to their original locations
-    for entry in reversed(operation_log):
-        original_path = entry["original"]
-        new_path = entry["new"]
+    if compressed_archive:  # Handle Undo for Compression
+        # Decompress the archive
+        with zipfile.ZipFile(compressed_archive, 'r') as zipf:
+            zipf.extractall(os.path.dirname(compressed_archive))
 
-        # Move file back to original location if it exists
-        if os.path.exists(new_path):
-            os.makedirs(os.path.dirname(original_path), exist_ok=True)
-            shutil.move(new_path, original_path)
+        # Remove the compressed archive
+        if os.path.exists(compressed_archive):
+            os.remove(compressed_archive)
 
-    # Clean up empty folders
-    for folder in folders_to_remove:
-        if os.path.exists(folder) and not os.listdir(folder):  # Check if folder is empty
-            os.rmdir(folder)
+    elif operations:  # Handle Undo for Sorting or Other Operations
+        folders_to_check = set()  # Track folders to clean up
 
-    # Remove the log file after successful undo
+        for entry in reversed(operations):  # Undo each operation
+            original_path = entry["original"]
+            new_path = entry.get("new", None)
+
+            if new_path and os.path.exists(new_path):
+                os.makedirs(os.path.dirname(original_path), exist_ok=True)
+                shutil.move(new_path, original_path)
+                folders_to_check.add(os.path.dirname(new_path))
+
+        # Remove empty folders that were created
+        for folder in folders_to_check:
+            if os.path.exists(folder) and not os.listdir(folder):
+                os.rmdir(folder)
+
+    # Remove the log file after successful Undo
     os.remove(LOG_FILE)
