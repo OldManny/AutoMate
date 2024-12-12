@@ -307,6 +307,60 @@ def compress_files(source_directory):
         json.dump(log_data, log_file)
 
 
+def backup_files(source_directory):
+    """
+    Creates a backup of all files in the specified directory by copying them into
+    a timestamped backup folder. Logs the operation for undo functionality.
+    """
+    if not os.path.exists(source_directory):
+        raise ValueError(f"The directory '{source_directory}' does not exist.")
+
+    # Ensure the source directory is not empty
+    if not any(file for file in os.listdir(source_directory) if not file.startswith(".")):
+        raise ValueError("The selected folder is empty. Nothing to back up.")
+
+    # Create a timestamped backup folder
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    backup_folder = os.path.join(source_directory, f"backup_{timestamp}")
+
+    # Ensure the backup folder itself is not included in the operation
+    if os.path.exists(backup_folder):
+        raise ValueError(
+            "A backup operation has already been performed. Please remove the previous backup folder or choose another directory."
+        )
+
+    os.makedirs(backup_folder, exist_ok=True)
+
+    operation_log = []  # Log individual file backups
+
+    # Traverse and copy files to the backup folder
+    for root, dirs, files in os.walk(source_directory):
+        # Skip the backup folder itself during traversal
+        dirs[:] = [d for d in dirs if os.path.abspath(os.path.join(root, d)) != os.path.abspath(backup_folder)]
+
+        for file in files:
+            if file.startswith("."):  # Skip hidden files
+                continue
+
+            source_file = os.path.join(root, file)
+            relative_path = os.path.relpath(root, source_directory)
+            target_dir = os.path.join(backup_folder, relative_path)
+            os.makedirs(target_dir, exist_ok=True)
+
+            target_file = os.path.join(target_dir, file)
+            shutil.copy2(source_file, target_file)
+
+            # Log the backup operation
+            operation_log.append({"original": source_file, "new": target_file})
+
+    # Save the operation log
+    if operation_log:
+        with open(LOG_FILE, "w") as log_file:
+            json.dump({"operations": operation_log, "created_folder": backup_folder}, log_file)
+    else:
+        raise ValueError("No files were backed up. Nothing to undo.")
+
+
 def undo_last_operation():
     """
     Reverts the last file organization operation by using the operation log.
@@ -325,6 +379,7 @@ def undo_last_operation():
     operations = log_data.get("operations", [])
     compressed_archive = log_data.get("compressed_archive", None)
     file_timestamps = log_data.get("file_timestamps", {})
+    created_folder = log_data.get("created_folder", None)
 
     if compressed_archive:  # Undo Compression
         with zipfile.ZipFile(compressed_archive, 'r') as zipf:
@@ -338,6 +393,10 @@ def undo_last_operation():
         # Remove the compressed archive
         if os.path.exists(compressed_archive):
             os.remove(compressed_archive)
+
+    elif created_folder:  # Undo Backup
+        if os.path.exists(created_folder):
+            shutil.rmtree(created_folder)  # Remove the entire backup folder
 
     elif operations:  # Handle Undo for Sorting or Other Operations
         folders_to_check = set()  # Track folders to clean up

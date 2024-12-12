@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
 )
 
 from src.automation.file_organizer import (
+    backup_files,
     compress_files,
     detect_duplicates,
     rename_files,
@@ -256,6 +257,9 @@ class FileOrganizerCustomizationDialog(QDialog):
                 ):
                     compress_files(folder_path)
                     self.parent().update_status("Files compressed successfully.")
+                elif self.checkbox_dict.get("Backup Files", None) and self.checkbox_dict["Backup Files"].isChecked():
+                    backup_files(folder_path)
+                    self.parent().update_status("Backup completed successfully.")
             else:
                 self.parent().update_status("Please select an operation to run.")
         except ValueError as e:
