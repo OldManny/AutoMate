@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OldManny/AutoMate/main.svg)](https://results.pre-commit.ci/latest/github/OldManny/AutoMate/main)
+[![Run Tests](https://github.com/OldManny/AutoMate/actions/workflows/test.yml/badge.svg)](https://github.com/OldManny/AutoMate/actions/workflows/test.yml) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OldManny/AutoMate/main.svg)](https://results.pre-commit.ci/latest/github/OldManny/AutoMate/main)
 
 </div>
 
@@ -70,7 +70,7 @@ This tool is designed to automate various tasks such as organizing files, sendin
 ## Usage
 
 
-### Organize Files (Under Development and NOT released yet)
+### Organize Files
 
 1. Click on "Organize Files" to open the file organization customization dialog.
 
