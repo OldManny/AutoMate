@@ -8,7 +8,7 @@ QPushButton {
     border: none;
     border-radius: 7px;
 }
-QPushButton:hover {
+QPushButton:pressed {
     background-color: #0056b3;
 }
 """
@@ -21,20 +21,7 @@ QPushButton {
     border: none;
     border-radius: 7px;
 }
-QPushButton:hover {
-    background-color: #5a6268;
-}
-"""
-
-# Style for green-colored buttons
-GREEN_BUTTON_STYLE = """
-QPushButton {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 7px;
-}
-QPushButton:hover {
+QPushButton:pressed {
     background-color: #5a6268;
 }
 """
@@ -44,26 +31,11 @@ QPushButton:hover {
 # Style for folder input fields
 FOLDER_INPUT_STYLE = """
 QLineEdit {
-    background-color: #6c757d;
+    background-color: #4B5D5C;
     color: white;
     border-radius: 13px;
     padding: 4px;
     padding-left: 12px;
-}
-"""
-
-################ General Button Styles for MainApp ################
-
-# Style buttons in the MainApp with a green color
-MAIN_APP_BUTTON_STYLE = """
-QPushButton {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-}
-QPushButton:hover {
-    background-color: #45a049;
 }
 """
 
@@ -76,24 +48,6 @@ QTextEdit {
     background-color: #2c2c2c;
     border: none;
     padding: 5px;
-}
-"""
-
-################ Dialog and Card Styles ################
-
-# Style for the File Organizer Customization Dialog
-FILE_ORGANIZER_DIALOG_STYLE = """
-QDialog {
-    background-color: #2E3030;
-    border-radius: 10px;
-}
-QCheckBox {
-    color: white;
-    padding: 5px;
-}
-QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
 }
 """
 
@@ -172,5 +126,45 @@ INSTRUCTION_LABEL_STYLE = """
 QLabel {
     color: #C9D3D5;
     font-size: 12px;
+}
+"""
+
+SIDEBAR_STYLE = """
+QWidget {
+    background-color: #553F33;
+    border-top-right-radius: 69px;
+    border-bottom-right-radius: 69px;
+}
+"""
+
+MAIN_WINDOW_STYLE = """
+QMainWindow {
+    background-color: #3B4F52;
+}
+"""
+############## Sidebar Navigation Button Style ##############
+
+NAV_BUTTON_STYLE = """
+QPushButton {
+    text-align: left;
+    padding: 10px 10px;
+    border: none;
+    border-radius: 10px;
+    margin: 5px 13px;
+    background-color: transparent;
+    color: #C9D3D5;
+    font-size: 14px;
+}
+QPushButton:checked {
+    background-color: #333333;
+}
+"""
+
+################ ToastNotification Style ################
+
+TOAST_NOTIFICATION_STYLE = """
+QWidget {
+    background-color: #333333; /* Dark gray background */
+    border: none;
 }
 """

@@ -45,7 +45,7 @@ def create_folder_input():
     folder_input = QLineEdit()
     folder_input.setPlaceholderText("Select folder...")
     folder_input.setReadOnly(True)
-    folder_input.setFixedWidth(291)
+    folder_input.setFixedWidth(333)
     folder_input.setStyleSheet(FOLDER_INPUT_STYLE)
     return folder_input
 

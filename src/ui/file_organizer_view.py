@@ -1,16 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (
-    QCheckBox,
-    QDesktopWidget,
-    QDialog,
-    QFileDialog,
-    QHBoxLayout,
-    QLabel,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.file_organizer import (
     backup_files,
@@ -31,24 +21,19 @@ from src.ui.components import (
     create_icon_button,
     create_separator,
 )
-from src.ui.style import BLUE_BUTTON_STYLE, FILE_ORGANIZER_DIALOG_STYLE, GRAY_BUTTON_STYLE, GREEN_BUTTON_STYLE
+from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.ui.toast_notification import ToastNotification
 
 
-# Dialog class for configuring file organization options
-class FileOrganizerCustomizationDialog(QDialog):
+class FileOrganizerCustomizationDialog(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Organize Files")
-        self.setFixedSize(400, 600)
 
         # Initialize the checkbox dictionary
         self.checkbox_dict = {}
 
-        # Set the style sheet
-        self.setStyleSheet(FILE_ORGANIZER_DIALOG_STYLE)
-
-        # Disable the window's resizing feature
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint & ~Qt.WindowMaximizeButtonHint)
+        self.setObjectName("FileOrganizerDialog")
+        self.toast = ToastNotification(self)
 
         # Main layout
         layout = QVBoxLayout()
@@ -95,7 +80,7 @@ class FileOrganizerCustomizationDialog(QDialog):
 
         self.folder_icon_btn = create_icon_button(
             icon_path="assets/photos/folder.png",
-            icon_size=(25, 25),
+            icon_size=(29, 29),
             button_size=(30, 30),
         )
 
@@ -136,11 +121,6 @@ class FileOrganizerCustomizationDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(10)
 
-        # Schedule Button aligned to the left
-        self.schedule_btn = create_button("Auto", GREEN_BUTTON_STYLE, size=(50, 30))
-        self.schedule_btn.clicked.connect(self.open_schedule_modal)
-        button_layout.addWidget(self.schedule_btn, alignment=Qt.AlignLeft)
-
         # Spacer to push Undo and Run buttons to the right
         button_layout.addStretch()
 
@@ -158,6 +138,10 @@ class FileOrganizerCustomizationDialog(QDialog):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
+
+    def show_status(self, message, message_type="info"):
+        """Shows a toast notification with the given message and type."""
+        self.toast.show_message(message, message_type)
 
     def build_checkbox_card(self, labels, margins=(10, 10, 10, 10), spacing=3, info_text=""):
         """
@@ -215,11 +199,13 @@ class FileOrganizerCustomizationDialog(QDialog):
         Displays an info window with the provided information text.
         """
         self.info_window = InfoWindow(info_text, parent=self)
-        # Center the info window over the parent dialog
-        parent_center = self.geometry().center()
-        window_geometry = self.info_window.frameGeometry()
-        window_geometry.moveCenter(parent_center)
-        self.info_window.move(window_geometry.topLeft())
+        # Center the info window over the main window instead of the widget
+        main_window = self.window()
+        if main_window:
+            main_window_center = main_window.geometry().center()
+            window_geometry = self.info_window.frameGeometry()
+            window_geometry.moveCenter(main_window_center)
+            self.info_window.move(window_geometry.topLeft())
         self.info_window.show()
 
     def on_run_clicked(self):
@@ -228,7 +214,7 @@ class FileOrganizerCustomizationDialog(QDialog):
         """
         folder_path = self.folder_input.text()  # Get the selected folder path
         if not folder_path:
-            self.parent().update_status("Please select a folder to organize.")
+            self.show_status("Please select a folder to organize.", "info")
             return
 
         try:
@@ -236,71 +222,65 @@ class FileOrganizerCustomizationDialog(QDialog):
             if any(checkbox.isChecked() for checkbox in self.checkboxes):
                 if self.checkbox_dict.get("Sort by Type", None) and self.checkbox_dict["Sort by Type"].isChecked():
                     sort_by_type(folder_path)
-                    self.parent().update_status("Files sorted by type successfully.")
+                    self.show_status("Files sorted by type successfully.", "success")
                 elif self.checkbox_dict.get("Sort by Date", None) and self.checkbox_dict["Sort by Date"].isChecked():
                     sort_by_date(folder_path)
-                    self.parent().update_status("Files sorted by date successfully.")
+                    self.show_status("Files sorted by date successfully.", "success")
                 elif self.checkbox_dict.get("Sort by Size", None) and self.checkbox_dict["Sort by Size"].isChecked():
                     sort_by_size(folder_path)
-                    self.parent().update_status("Files sorted by size successfully.")
+                    self.show_status("Files sorted by size successfully.", "success")
                 elif (
                     self.checkbox_dict.get("Detect Duplicates", None)
                     and self.checkbox_dict["Detect Duplicates"].isChecked()
                 ):
                     detect_duplicates(folder_path)
-                    self.parent().update_status("Duplicate files detected and moved successfully.")
+                    self.show_status("Duplicate files detected and moved successfully.", "success")
                 elif self.checkbox_dict.get("Rename Files", None) and self.checkbox_dict["Rename Files"].isChecked():
                     rename_files(folder_path)
-                    self.parent().update_status("Files renamed successfully.")
+                    self.show_status("Files renamed successfully.", "success")
                 elif (
                     self.checkbox_dict.get("Compress Files", None) and self.checkbox_dict["Compress Files"].isChecked()
                 ):
                     compress_files(folder_path)
-                    self.parent().update_status("Files compressed successfully.")
+                    self.show_status("Files compressed successfully.", "success")
                 elif self.checkbox_dict.get("Backup Files", None) and self.checkbox_dict["Backup Files"].isChecked():
                     backup_files(folder_path)
-                    self.parent().update_status("Backup completed successfully.")
+                    self.show_status("Backup completed successfully.", "success")
             else:
-                self.parent().update_status("Please select an operation to run.")
+                self.show_status("Please select an operation to run.", "info")
         except ValueError as e:
-            self.parent().update_status(str(e))
+            self.show_status(str(e))
         except Exception as e:
-            self.parent().update_status(f"An unexpected error occurred: {str(e)}")
+            self.show_status(f"An unexpected error occurred: {str(e)}", "error")
 
     def open_schedule_modal(self):
         """
         Opens the Schedule Modal Window for setting automation schedules.
         """
-        schedule_modal = ScheduleModalWindow(self)  # Pass self as the parent
-        # Center the modal relative to the FileOrganizerCustomizationDialog
-        parent_center = self.geometry().center()
-        modal_geometry = schedule_modal.frameGeometry()
-        modal_geometry.moveCenter(parent_center)
-        schedule_modal.move(modal_geometry.topLeft())
+        schedule_modal = ScheduleModalWindow(self)
+        # Center the modal relative to the main window
+        main_window = self.window()
+        if main_window:
+            main_window_center = main_window.geometry().center()
+            modal_geometry = schedule_modal.frameGeometry()
+            modal_geometry.moveCenter(main_window_center)
+            schedule_modal.move(modal_geometry.topLeft())
 
         result = schedule_modal.exec_()
         if result == QDialog.Accepted:
-            # Retrieve the scheduled time and days
             scheduled_time = schedule_modal.time_edit.time().toString("HH:mm")
             selected_days = [day for day, btn in schedule_modal.day_buttons.items() if btn.isChecked()]
-            # Update status or handle the scheduling as needed
-            self.update_status(f"Scheduled at {scheduled_time} on: {', '.join(selected_days)}.")
+            self.show_status(f"Scheduled at {scheduled_time} on: {', '.join(selected_days)}.", "success")
 
     def center_modal(self, modal):
         """
-        Centers the given modal relative to the parent window.
+        Centers the given modal relative to the main window.
         """
-        if self.parent():
-            parent_geometry = self.parent().frameGeometry()
-            parent_center = parent_geometry.center()
+        main_window = self.window()
+        if main_window:
+            main_window_center = main_window.geometry().center()
             modal_geometry = modal.frameGeometry()
-            modal_geometry.moveCenter(parent_center)
-            modal.move(modal_geometry.topLeft())
-        else:
-            # Fallback to centering on the screen if no parent is set
-            screen_center = QDesktopWidget().availableGeometry().center()
-            modal_geometry = modal.frameGeometry()
-            modal_geometry.moveCenter(screen_center)
+            modal_geometry.moveCenter(main_window_center)
             modal.move(modal_geometry.topLeft())
 
     def select_folder(self):
@@ -317,39 +297,14 @@ class FileOrganizerCustomizationDialog(QDialog):
                 if checkbox != current_checkbox:
                     checkbox.setChecked(False)
 
-    def showEvent(self, event):
-        """
-        Overriding the showEvent, ensuring that the self center is called
-        every time the dialog is shown.
-        """
-        super().showEvent(event)
-        self.center()
-
-    def center(self):
-        """
-        Centers the Organize Files window relative to its parent (main interface).
-        """
-        if self.parent():
-            parent_geometry = self.parent().frameGeometry()
-            parent_center = parent_geometry.center()
-            dialog_geometry = self.frameGeometry()
-            dialog_geometry.moveCenter(parent_center)
-            self.move(dialog_geometry.topLeft())
-        else:
-            # Fallback to centering on the screen if no parent is set
-            screen_center = QDesktopWidget().availableGeometry().center()
-            dialog_geometry = self.frameGeometry()
-            dialog_geometry.moveCenter(screen_center)
-            self.move(dialog_geometry.topLeft())
-
     def on_undo_clicked(self):
         """
         Handles the Undo button click to revert the last file organization operation.
         """
         try:
             undo_last_operation()
-            self.parent().update_status("The last operation was successfully undone.")
+            self.show_status("The last operation was successfully undone.", "success")
         except ValueError as e:
-            self.parent().update_status(str(e))
+            self.show_status(str(e))
         except Exception as e:
-            self.parent().update_status(f"An unexpected error occurred: {str(e)}")
+            self.show_status(f"An unexpected error occurred: {str(e)}", "error")

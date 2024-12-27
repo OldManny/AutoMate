@@ -1,116 +1,219 @@
 import os
 import sys
 
-from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtGui import QColor, QFont, QFontDatabase, QPixmap
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QMainWindow, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PyQt5.QtCore import QCoreApplication, QSize, Qt
+from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
-from src.ui.style import MAIN_APP_BUTTON_STYLE, STATUS_AREA_STYLE  # Import styles
+from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 
 
-# Main application class inheriting from QMainWindow
 class MainApp(QMainWindow):
+    """
+    Main application window for AutoMate with a sidebar and multiple pages.
+    """
+
     def __init__(self):
         super().__init__()
-        self.setFixedSize(650, 660)  # Set fixed size
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Remove maximize button
-        self.initUI()  # Initialize the user interface
+        self.setFixedSize(588, 600)  # Fixed window size
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Disable maximize button
+        self.setStyleSheet(MAIN_WINDOW_STYLE)  # Apply main window style
+        self.initUI()
 
     def initUI(self):
-        """Sets up the main UI components and layout."""
-        self.setWindowTitle("AutoMate")  # Set the window title
-        self.center()  # Center the window on the screen
+        """
+        Sets up the main interface layout with a sidebar and content area.
+        """
+        self.setWindowTitle("")
+        self.center()
 
-        # Create the main layout and set margins
-        main_layout = QVBoxLayout()
+        main_widget = QWidget()
+        main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Header Image setup
-        self.header_image = QLabel(self)
-        pixmap = QPixmap("assets/photos/Header.jpg")  # Load header image
-        self.header_image.setPixmap(pixmap)  # Set the pixmap to QLabel
-        self.header_image.setScaledContents(True)  # Scale image to fit QLabel
-        main_layout.addWidget(self.header_image)
+        # Create
+        self.sidebar = self.create_sidebar()
 
-        # Add spacing after the header image
-        main_layout.addSpacing(0)
+        # Add shadow effect to the sidebar
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setXOffset(0)
+        shadow.setYOffset(0)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        self.sidebar.setGraphicsEffect(shadow)
+        main_layout.addWidget(self.sidebar)
 
-        # Button layout for organizing feature buttons horizontally
-        button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(10, 0, 10, 0)  # Margins for button layout
+        # Create content area
+        self.content_area = QWidget()
+        content_layout = QVBoxLayout(self.content_area)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
 
-        # Button for the File Organizer functionality
-        self.file_organizer_btn = self.create_custom_button("Organize Files", 200, 50)
-        self.file_organizer_btn.clicked.connect(self.open_file_organizer_customization)
-        button_layout.addWidget(self.file_organizer_btn)
+        # Stack for switching between pages
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self.create_file_organizer_page())
+        self.stacked_widget.addWidget(self.create_email_page())
+        self.stacked_widget.addWidget(self.create_data_entry_page())
 
-        # Placeholder buttons for core application features
-        self.email_sender_btn = self.create_custom_button("Send Email", 200, 50)
-        button_layout.addWidget(self.email_sender_btn)
+        content_layout.addWidget(self.stacked_widget)
+        main_layout.addWidget(self.content_area)
 
-        self.data_entry_btn = self.create_custom_button("Data Entry", 200, 50)
-        button_layout.addWidget(self.data_entry_btn)
+        # Adjust stretch to allocate space between sidebar and content
+        main_layout.setStretch(0, 0)
+        main_layout.setStretch(1, 1)
 
-        # Add the button layout to the main layout
-        main_layout.addLayout(button_layout)
+        self.setCentralWidget(main_widget)
 
-        # Status area for displaying messages to the user
-        self.status = QTextEdit(self)
-        self.status.setReadOnly(True)  # Make status area read-only
-        self.status.setFixedHeight(100)  # Fixed height for consistent layout
-        self.status.setStyleSheet(STATUS_AREA_STYLE)  # Apply centralized style
-        main_layout.addWidget(self.status)
+    def create_sidebar(self):
+        """
+        Creates the sidebar with navigation buttons and additional options.
+        """
+        sidebar = QWidget()
+        sidebar.setFixedWidth(153)  # Fixed width for the sidebar
+        sidebar.setStyleSheet(SIDEBAR_STYLE)
 
-        # Set the main layout as the central widget for the window
-        container = QWidget()
-        container.setLayout(main_layout)
-        self.setCentralWidget(container)
+        layout = QVBoxLayout(sidebar)
+        layout.setContentsMargins(0, 30, 0, 30)
+        layout.setSpacing(0)
 
-    def create_custom_button(self, text, width, height):
-        """Creates a styled button with specified text, width, and height."""
-        button = QPushButton(text, self)  # Create button with label text
-        button.setFixedSize(width, height)  # Set button dimensions
-        button.setStyleSheet(MAIN_APP_BUTTON_STYLE)  # Apply centralized button style
-        button.setCursor(Qt.PointingHandCursor)  # Change cursor on hover
+        # Button group for navigation
+        self.nav_button_group = QButtonGroup(self)
+        self.nav_button_group.setExclusive(True)
+
+        # Navigation buttons
+        nav_buttons = [
+            ("Files", 0, "assets/photos/file.png"),
+            ("Email", 1, "assets/photos/email.png"),
+            ("Data", 2, "assets/photos/data.png"),
+        ]
+
+        for text, index, icon_path in nav_buttons:
+            btn = self.create_nav_button(text, icon_path)
+            btn.setCheckable(True)
+            self.nav_button_group.addButton(btn)
+            btn.clicked.connect(lambda checked, idx=index: self.on_nav_button_clicked(idx))
+            layout.addWidget(btn)
+
+        # Set the first button as initially checked
+        first_button = self.nav_button_group.buttons()[0]
+        first_button.setChecked(True)
+
+        # Add a spacer and additional buttons
+        layout.addStretch()
+        auto_btn = self.create_nav_button("Schedule", "assets/photos/schedule.png")
+        auto_btn.clicked.connect(self.open_schedule_modal)
+        layout.addWidget(auto_btn)
+
+        running_btn = self.create_nav_button("Running", "assets/photos/running.png")
+        layout.addWidget(running_btn)
+
+        return sidebar
+
+    def create_nav_button(self, text, icon_path):
+        """
+        Creates a styled navigation button with an optional icon.
+        """
+        button = QPushButton(text)
+        if os.path.exists(icon_path):
+            icon = QIcon(icon_path)
+            button.setIcon(icon)
+            # Set the icon size
+            button.setIconSize(QSize(27, 27))  # Icon size
+            button.setFixedHeight(50)
+            button.setText("  " + text)  # Add space for text alignment
+        button.setStyleSheet(NAV_BUTTON_STYLE)
+        button.setCursor(Qt.PointingHandCursor)
         return button
 
+    def on_nav_button_clicked(self, index):
+        """
+        Switches to the selected page in the stacked widget.
+        """
+        self.stacked_widget.setCurrentIndex(index)
+
+    def open_schedule_modal(self):
+        """
+        Opens the scheduling modal for automation.
+        """
+        current_widget = self.stacked_widget.currentWidget()
+        if isinstance(current_widget, QWidget):
+            file_organizer = current_widget.findChild(QWidget, "FileOrganizerWidget")
+            if file_organizer:
+                file_organizer.open_schedule_modal()
+
+    def create_file_organizer_page(self):
+        """
+        Creates the file organizer page.
+        """
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        file_organizer = FileOrganizerCustomizationDialog(self)
+        file_organizer.setObjectName("FileOrganizerWidget")
+        layout.addWidget(file_organizer)
+
+        layout.setAlignment(Qt.AlignCenter)
+        return container
+
+    def create_email_page(self):
+        """
+        Creates a placeholder page for the email module.
+        """
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        label = QLabel("Email Sender Module")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+        return page
+
+    def create_data_entry_page(self):
+        """
+        Creates a placeholder page for the data entry module.
+        """
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        label = QLabel("Data Entry Module")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+        return page
+
     def center(self):
-        """Centers the application window on the screen."""
-        qr = self.frameGeometry()  # Get window geometry
-        cp = QCoreApplication.instance().desktop().screenGeometry().center()  # Get center point of screen
-        qr.moveCenter(cp)  # Move window geometry to center point
-        self.move(qr.topLeft())  # Move the window to the new center position
-
-    def open_file_organizer_customization(self):
-        """Instantiate and open the File Organizer dialog."""
-        self.file_organizer_dialog = FileOrganizerCustomizationDialog(self)  # Create the dialog
-        self.file_organizer_dialog.exec_()  # Execute the dialog
-
-    def update_status(self, message):
         """
-        Updates the status area with a message.
-        Highlights messages with "error" or "fail" in orange, others in cyan.
+        Centers the main application window on the screen.
         """
-        if "error" in message.lower() or "fail" in message.lower():
-            self.status.setTextColor(QColor("orange"))  # Set error message color
-        else:
-            self.status.setTextColor(QColor("cyan"))  # Set regular message color
-        self.status.append(message)  # Append the message to the status area
+        qr = self.frameGeometry()
+        cp = QCoreApplication.instance().desktop().screenGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
-# Main application entry point
 if __name__ == "__main__":
-    app = QApplication(sys.argv)  # Initialize the application
-    # Set a global font for the entire application
+    app = QApplication(sys.argv)
+
+    # Set a custom global font for the application
     font_path = os.path.abspath("assets/fonts/Poppins-Medium.ttf")
     font_id = QFontDatabase.addApplicationFont(font_path)
     if font_id == -1:
         print(f"Failed to load Poppins font from {font_path}. Falling back to default.")
     else:
-        # Set the global font to Poppins
         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
         app.setFont(QFont(font_family, 13))
-    main_app = MainApp()  # Create an instance of MainApp
-    main_app.show()  # Show the main window
-    sys.exit(app.exec_())  # Start the application event loop
+
+    # Run the main application
+    main_app = MainApp()
+    main_app.show()
+    sys.exit(app.exec_())
