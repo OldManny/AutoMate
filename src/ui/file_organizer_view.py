@@ -214,7 +214,7 @@ class FileOrganizerCustomizationDialog(QWidget):
         """
         folder_path = self.folder_input.text()  # Get the selected folder path
         if not folder_path:
-            self.show_status("Please select a folder to organize.", "info")
+            self.show_status("Select a folder", "info")
             return
 
         try:
@@ -222,32 +222,32 @@ class FileOrganizerCustomizationDialog(QWidget):
             if any(checkbox.isChecked() for checkbox in self.checkboxes):
                 if self.checkbox_dict.get("Sort by Type", None) and self.checkbox_dict["Sort by Type"].isChecked():
                     sort_by_type(folder_path)
-                    self.show_status("Files sorted by type successfully.", "success")
+                    self.show_status("Files sorted by type", "success")
                 elif self.checkbox_dict.get("Sort by Date", None) and self.checkbox_dict["Sort by Date"].isChecked():
                     sort_by_date(folder_path)
-                    self.show_status("Files sorted by date successfully.", "success")
+                    self.show_status("Files sorted by date", "success")
                 elif self.checkbox_dict.get("Sort by Size", None) and self.checkbox_dict["Sort by Size"].isChecked():
                     sort_by_size(folder_path)
-                    self.show_status("Files sorted by size successfully.", "success")
+                    self.show_status("Files sorted by size", "success")
                 elif (
                     self.checkbox_dict.get("Detect Duplicates", None)
                     and self.checkbox_dict["Detect Duplicates"].isChecked()
                 ):
                     detect_duplicates(folder_path)
-                    self.show_status("Duplicate files detected and moved successfully.", "success")
+                    self.show_status("Duplicate files moved", "success")
                 elif self.checkbox_dict.get("Rename Files", None) and self.checkbox_dict["Rename Files"].isChecked():
                     rename_files(folder_path)
-                    self.show_status("Files renamed successfully.", "success")
+                    self.show_status("Files renamed", "success")
                 elif (
                     self.checkbox_dict.get("Compress Files", None) and self.checkbox_dict["Compress Files"].isChecked()
                 ):
                     compress_files(folder_path)
-                    self.show_status("Files compressed successfully.", "success")
+                    self.show_status("Files compressed", "success")
                 elif self.checkbox_dict.get("Backup Files", None) and self.checkbox_dict["Backup Files"].isChecked():
                     backup_files(folder_path)
-                    self.show_status("Backup completed successfully.", "success")
+                    self.show_status("Backup completed", "success")
             else:
-                self.show_status("Please select an operation to run.", "info")
+                self.show_status("Select an operation", "info")
         except ValueError as e:
             self.show_status(str(e))
         except Exception as e:
@@ -303,7 +303,7 @@ class FileOrganizerCustomizationDialog(QWidget):
         """
         try:
             undo_last_operation()
-            self.show_status("The last operation was successfully undone.", "success")
+            self.show_status("Undone", "success")
         except ValueError as e:
             self.show_status(str(e))
         except Exception as e:

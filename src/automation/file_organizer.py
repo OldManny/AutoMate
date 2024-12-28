@@ -55,7 +55,7 @@ def sort_by_type(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log, "folders": list(folders_created)}, log_file)
     else:
-        raise ValueError("No files were moved. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def sort_by_date(source_directory):
@@ -108,7 +108,7 @@ def sort_by_date(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log, "folders": list(folders_to_create)}, log_file)
     else:
-        raise ValueError("No files were moved. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def sort_by_size(source_directory):
@@ -170,7 +170,7 @@ def sort_by_size(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log, "folders": list(folders_to_create)}, log_file)
     else:
-        raise ValueError("No files were moved. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def detect_duplicates(source_directory):
@@ -214,7 +214,7 @@ def detect_duplicates(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log, "folders": [duplicates_folder]}, log_file)
     else:
-        raise ValueError("No duplicates found. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def hash_file(file_path):
@@ -265,7 +265,7 @@ def rename_files(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log}, log_file)
     else:
-        raise ValueError("No files were renamed. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def compress_files(source_directory):
@@ -317,7 +317,7 @@ def backup_files(source_directory):
 
     # Ensure the source directory is not empty
     if not any(file for file in os.listdir(source_directory) if not file.startswith(".")):
-        raise ValueError("The selected folder is empty. Nothing to back up.")
+        raise ValueError("Nothing to back up")
 
     # Create a timestamped backup folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -358,7 +358,7 @@ def backup_files(source_directory):
         with open(LOG_FILE, "w") as log_file:
             json.dump({"operations": operation_log, "created_folder": backup_folder}, log_file)
     else:
-        raise ValueError("No files were backed up. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
 
 def undo_last_operation():
@@ -369,7 +369,7 @@ def undo_last_operation():
     """
     # Check if the log file exists
     if not os.path.exists(LOG_FILE):
-        raise ValueError("No operation log found. Nothing to undo.")
+        raise ValueError("Nothing to undo")
 
     # Load the operation log from the JSON file
     with open(LOG_FILE, "r") as log_file:

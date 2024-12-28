@@ -52,7 +52,7 @@ class MainApp(QMainWindow):
         shadow.setBlurRadius(20)
         shadow.setXOffset(0)
         shadow.setYOffset(0)
-        shadow.setColor(QColor(0, 0, 0, 200))
+        shadow.setColor(QColor(0, 0, 0, 250))
         self.sidebar.setGraphicsEffect(shadow)
         main_layout.addWidget(self.sidebar)
 
@@ -82,7 +82,7 @@ class MainApp(QMainWindow):
         Creates the sidebar with navigation buttons and additional options.
         """
         sidebar = QWidget()
-        sidebar.setFixedWidth(153)  # Fixed width for the sidebar
+        sidebar.setFixedWidth(150)  # Fixed width for the sidebar
         sidebar.setStyleSheet(SIDEBAR_STYLE)
 
         layout = QVBoxLayout(sidebar)

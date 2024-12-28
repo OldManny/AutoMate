@@ -131,7 +131,7 @@ QLabel {
 
 SIDEBAR_STYLE = """
 QWidget {
-    background-color: #553F33;
+    background-color: #333333;
     border-top-right-radius: 69px;
     border-bottom-right-radius: 69px;
 }
@@ -156,7 +156,7 @@ QPushButton {
     font-size: 14px;
 }
 QPushButton:checked {
-    background-color: #333333;
+    background-color: #494949;
 }
 """
 
@@ -165,6 +165,5 @@ QPushButton:checked {
 TOAST_NOTIFICATION_STYLE = """
 QWidget {
     background-color: #333333; /* Dark gray background */
-    border: none;
 }
 """

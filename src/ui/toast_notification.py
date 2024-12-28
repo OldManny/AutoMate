@@ -89,10 +89,10 @@ class ToastNotification(QWidget):
             # Get the geometry of the main window
             main_geometry = main_window.geometry()
             x = main_geometry.x() + main_geometry.width() - self.width() - 20
-            target_y = main_geometry.y() + 40
+            target_y = main_geometry.y() + 5
 
             # Position slightly above the target position for animation
-            self.move(x, target_y - 20)
+            self.move(x, target_y - 5)
 
             # Setup show animation
             self.show_animation.setStartValue(self.pos())
@@ -108,7 +108,7 @@ class ToastNotification(QWidget):
         if self.isVisible():
             current_pos = self.pos()
             self.hide_animation.setStartValue(current_pos)
-            self.hide_animation.setEndValue(QPoint(current_pos.x(), current_pos.y() - 20))
+            self.hide_animation.setEndValue(QPoint(current_pos.x(), current_pos.y() - 5))
             self.hide_animation.start()
 
     def _on_hide_finished(self):
