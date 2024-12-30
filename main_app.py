@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from src.automation.scheduler_manager import SchedulerManager
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 
@@ -30,6 +31,7 @@ class MainApp(QMainWindow):
         self.setFixedSize(588, 600)  # Fixed window size
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Disable maximize button
         self.setStyleSheet(MAIN_WINDOW_STYLE)  # Apply main window style
+        self.scheduler_manager = SchedulerManager()
         self.initUI()
 
     def initUI(self):
@@ -162,12 +164,17 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        file_organizer = FileOrganizerCustomizationDialog(self)
+        # Pass the shared scheduler_manager to FileOrganizerCustomizationDialog
+        file_organizer = FileOrganizerCustomizationDialog(parent=self, scheduler_manager=self.scheduler_manager)
         file_organizer.setObjectName("FileOrganizerWidget")
         layout.addWidget(file_organizer)
 
-        layout.setAlignment(Qt.AlignCenter)
         return container
+
+    def closeEvent(self, event):
+        # Gracefully shut down the scheduler on app exit
+        self.scheduler_manager.shutdown()
+        super().closeEvent(event)
 
     def create_email_page(self):
         """

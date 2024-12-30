@@ -1,11 +1,10 @@
-from PyQt5.QtCore import QSize, Qt, QTime
+from PyQt5.QtCore import QSize, Qt, QTime, pyqtSignal
 from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
     QTimeEdit,
@@ -128,9 +127,8 @@ def create_day_button(letter):
 
 
 class ScheduleModalWindow(BaseModalWindow):
-    """
-    Modal window for scheduling automation operations with time and day selection.
-    """
+    schedule_saved = pyqtSignal(str, list)  # Signal to send time and days on save
+    schedule_canceled = pyqtSignal()  # Signal to indicate cancellation
 
     def __init__(self, parent=None):
         super().__init__(width=400, height=400, style_sheet=INFO_WINDOW_STYLE, parent=parent)
@@ -148,7 +146,7 @@ class ScheduleModalWindow(BaseModalWindow):
 
         self.main_layout.addSpacing(20)
 
-        # Days Selection Section
+        # Days Selection Section (Optional)
         days_layout = QHBoxLayout()
         days_layout.setSpacing(5)
         self.day_buttons = {}
@@ -165,7 +163,9 @@ class ScheduleModalWindow(BaseModalWindow):
         self.main_layout.addStretch()
 
         # Instructional Label
-        instruction_label = QLabel("Schedule an automation by setting the time \nand selecting the recurring days.")
+        instruction_label = QLabel(
+            "Schedule an automation by setting the time.\n" "You can optionally select recurring days."
+        )
         instruction_label.setStyleSheet(INSTRUCTION_LABEL_STYLE)
         instruction_label.setAlignment(Qt.AlignCenter)
         instruction_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
@@ -174,7 +174,7 @@ class ScheduleModalWindow(BaseModalWindow):
         # Spacer to Push Buttons to Bottom
         self.main_layout.addStretch()
 
-        #  Separator
+        # Separator
         self.add_widget(create_separator())
 
         # Action Buttons
@@ -199,12 +199,14 @@ class ScheduleModalWindow(BaseModalWindow):
         """Saves the selected time and days to set an automation schedule."""
         selected_time = self.time_edit.time().toString("HH:mm")
         selected_days = [day for day, btn in self.day_buttons.items() if btn.isChecked()]
-        if not selected_days:
-            QMessageBox.warning(self, "No Days Selected", "Please select at least one day.")
-            return
-        confirmation_message = f"Scheduled at {selected_time} on: {', '.join(selected_days)}."
-        QMessageBox.information(self, "Schedule Set", confirmation_message)
+        # Allow scheduling within the next 24 hours without recurring days
+        self.schedule_saved.emit(selected_time, selected_days)
         self.accept()
+
+    def reject(self):
+        """Handles the Cancel button click."""
+        self.schedule_canceled.emit()
+        super().reject()
 
 
 class InfoWindow(BaseModalWindow):

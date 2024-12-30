@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QCheckBox, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.file_organizer import (
     backup_files,
@@ -12,6 +12,7 @@ from src.automation.file_organizer import (
     sort_by_type,
     undo_last_operation,
 )
+from src.automation.scheduler_manager import TASK_LABELS
 from src.ui.components import (
     InfoWindow,
     ScheduleModalWindow,
@@ -26,8 +27,9 @@ from src.ui.toast_notification import ToastNotification
 
 
 class FileOrganizerCustomizationDialog(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, scheduler_manager=None):
         super().__init__(parent)
+        self.scheduler_manager = scheduler_manager
 
         # Initialize the checkbox dictionary
         self.checkbox_dict = {}
@@ -99,7 +101,7 @@ class FileOrganizerCustomizationDialog(QWidget):
 
         # Detect Duplicates Card
         detect_duplicates_labels = ["Detect Duplicates"]
-        detect_duplicates_info_text = "Identify and manage duplicate files by comparing their unique hashes. \n\nAll duplicates are relocated to a dedicated folder, helping you keep your storage clean and organized."
+        detect_duplicates_info_text = "Identify and manage duplicate files by comparing their unique hashes. \n\nAll duplicates are relocated to a dedicated folder, helping you to keep your storage clean and organized."
         detect_duplicates_card = self.build_checkbox_card(
             detect_duplicates_labels, info_text=detect_duplicates_info_text
         )
@@ -107,7 +109,7 @@ class FileOrganizerCustomizationDialog(QWidget):
 
         # Rename Files Card
         rename_files_labels = ["Rename Files"]
-        rename_files_info_text = "Rename your files by appending the date and hour of the operation. \n\nThis ensures each file name is unique and time-stamped for better organization."
+        rename_files_info_text = "Rename your files by appending the date and hour of the operation. \n\nThis ensures each file name is unique and time stamped for better organization."
         rename_files_card = self.build_checkbox_card(rename_files_labels, info_text=rename_files_info_text)
         layout.addWidget(rename_files_card)
 
@@ -136,7 +138,6 @@ class FileOrganizerCustomizationDialog(QWidget):
 
         # Add the button layout to the main layout
         layout.addLayout(button_layout)
-
         self.setLayout(layout)
 
     def show_status(self, message, message_type="info"):
@@ -258,19 +259,65 @@ class FileOrganizerCustomizationDialog(QWidget):
         Opens the Schedule Modal Window for setting automation schedules.
         """
         schedule_modal = ScheduleModalWindow(self)
-        # Center the modal relative to the main window
-        main_window = self.window()
-        if main_window:
-            main_window_center = main_window.geometry().center()
-            modal_geometry = schedule_modal.frameGeometry()
-            modal_geometry.moveCenter(main_window_center)
-            schedule_modal.move(modal_geometry.topLeft())
 
-        result = schedule_modal.exec_()
-        if result == QDialog.Accepted:
-            scheduled_time = schedule_modal.time_edit.time().toString("HH:mm")
-            selected_days = [day for day, btn in schedule_modal.day_buttons.items() if btn.isChecked()]
-            self.show_status(f"Scheduled at {scheduled_time} on: {', '.join(selected_days)}.", "success")
+        # Connect signals for notifications
+        schedule_modal.schedule_saved.connect(self.on_schedule_saved)
+        schedule_modal.schedule_canceled.connect(self.on_schedule_canceled)
+
+        # Center the modal relative to the main window
+        self.center_modal(schedule_modal)
+        schedule_modal.exec_()
+
+    def on_schedule_saved(self, selected_time, selected_days):
+        """
+        Handles the schedule saved signal. Schedules the currently selected operation.
+        """
+        folder_path = self.folder_input.text()
+        if not folder_path:
+            self.show_status("No folder selected for scheduling.", "info")
+            return
+
+        # Determine which operation is checked (only one can be checked per your single_selection logic)
+        selected_task_type = None
+        if self.checkbox_dict.get("Sort by Type") and self.checkbox_dict["Sort by Type"].isChecked():
+            selected_task_type = "sort_by_type"
+        elif self.checkbox_dict.get("Sort by Date") and self.checkbox_dict["Sort by Date"].isChecked():
+            selected_task_type = "sort_by_date"
+        elif self.checkbox_dict.get("Sort by Size") and self.checkbox_dict["Sort by Size"].isChecked():
+            selected_task_type = "sort_by_size"
+        elif self.checkbox_dict.get("Detect Duplicates") and self.checkbox_dict["Detect Duplicates"].isChecked():
+            selected_task_type = "detect_duplicates"
+        elif self.checkbox_dict.get("Rename Files") and self.checkbox_dict["Rename Files"].isChecked():
+            selected_task_type = "rename_files"
+        elif self.checkbox_dict.get("Compress Files") and self.checkbox_dict["Compress Files"].isChecked():
+            selected_task_type = "compress_files"
+        elif self.checkbox_dict.get("Backup Files") and self.checkbox_dict["Backup Files"].isChecked():
+            selected_task_type = "backup_files"
+
+        if not selected_task_type:
+            self.show_status("No operation selected for scheduling.", "info")
+            return
+
+        # Now schedule using our shared SchedulerManager
+        if self.scheduler_manager:
+            self.scheduler_manager.add_scheduled_job(
+                task_type=selected_task_type,
+                folder_target=folder_path,
+                run_time=selected_time,
+                recurring_days=selected_days,
+            )
+
+        # Give the user feedback
+        user_friendly = TASK_LABELS.get(selected_task_type, selected_task_type)
+        if selected_days:
+            days_list = ", ".join(selected_days)
+            self.show_status(f"Scheduled {user_friendly} at {selected_time}\nOn {days_list}", "success")
+        else:
+            self.show_status(f"Scheduled {user_friendly} at {selected_time}", "success")
+
+    def on_schedule_canceled(self):
+        """Handles the schedule canceled signal and shows a toast notification."""
+        self.show_status("Scheduling canceled", "info")
 
     def center_modal(self, modal):
         """

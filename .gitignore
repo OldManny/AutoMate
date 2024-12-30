@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Json file for CRON automation
+scheduled_jobs.json
+
 # Distribution / packaging
 .Python
 build/

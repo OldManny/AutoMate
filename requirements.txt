@@ -2,3 +2,4 @@ PyQt5
 pytest
 pytest-mock
 setuptools
+APScheduler

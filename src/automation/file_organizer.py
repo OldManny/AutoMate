@@ -8,10 +8,12 @@ import zipfile
 LOG_FILE = "operation_log.json"
 
 
-def sort_by_type(source_directory):
+def sort_by_type(source_directory, **kwargs):
     """
     Organizes files in the specified directory by type into subdirectories and logs changes for undo.
     """
+    kwargs.get('task_type', None)
+
     type_directories = {
         "images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg"],
         "documents": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt", ".xls", ".xlsx", ".ppt", ".pptx"],
@@ -58,10 +60,11 @@ def sort_by_type(source_directory):
         raise ValueError("Nothing to undo")
 
 
-def sort_by_date(source_directory):
+def sort_by_date(source_directory, **kwargs):
     """
     Organizes files in the specified directory by last modification date into subdirectories and logs changes for undo.
     """
+    kwargs.get('task_type', None)
 
     # Check if the specified directory exists
     if not os.path.exists(source_directory):
@@ -111,10 +114,11 @@ def sort_by_date(source_directory):
         raise ValueError("Nothing to undo")
 
 
-def sort_by_size(source_directory):
+def sort_by_size(source_directory, **kwargs):
     """
     Organizes files in the specified directory by size into subdirectories and logs changes for undo.
     """
+    kwargs.get('task_type', None)
 
     # Check if the specified directory exists
     if not os.path.exists(source_directory):
@@ -173,11 +177,13 @@ def sort_by_size(source_directory):
         raise ValueError("Nothing to undo")
 
 
-def detect_duplicates(source_directory):
+def detect_duplicates(source_directory, **kwargs):
     """
     Identifies and moves duplicate files in the specified directory into a 'duplicates' folder.
     Logs changes for undo functionality.
     """
+    kwargs.get('task_type', None)
+
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
 
@@ -217,10 +223,13 @@ def detect_duplicates(source_directory):
         raise ValueError("Nothing to undo")
 
 
-def hash_file(file_path):
+def hash_file(file_path, **kwargs):
     """
     Computes the SHA256 hash of a file's content.
     """
+
+    kwargs.get('task_type', None)
+
     BUF_SIZE = 65536  # Read in chunks of 64KB
     sha256 = hashlib.sha256()
 
@@ -231,11 +240,14 @@ def hash_file(file_path):
     return sha256.hexdigest()
 
 
-def rename_files(source_directory):
+def rename_files(source_directory, **kwargs):
     """
     Renames files in the specified directory by appending a timestamp
     to their names, ensuring uniqueness and logging changes for Undo.
     """
+
+    kwargs.get('task_type', None)
+
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
 
@@ -268,11 +280,14 @@ def rename_files(source_directory):
         raise ValueError("Nothing to undo")
 
 
-def compress_files(source_directory):
+def compress_files(source_directory, **kwargs):
     """
     Compresses all files in the specified directory into a single ZIP archive,
     removes the original files after compression, and logs changes for Undo.
     """
+
+    kwargs.get('task_type', None)
+
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
 
@@ -307,11 +322,14 @@ def compress_files(source_directory):
         json.dump(log_data, log_file)
 
 
-def backup_files(source_directory):
+def backup_files(source_directory, **kwargs):
     """
     Creates a backup of all files in the specified directory by copying them into
     a timestamped backup folder. Logs the operation for undo functionality.
     """
+
+    kwargs.get('task_type', None)
+
     if not os.path.exists(source_directory):
         raise ValueError(f"The directory '{source_directory}' does not exist.")
 

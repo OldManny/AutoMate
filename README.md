@@ -74,7 +74,7 @@ This tool is designed to automate various tasks such as organizing files, sendin
   <img src="images/OrganizeFiles.png" alt="Organize Files Dialog" />
 </p>
 
-1. Click on "Organize Files" to open the file organization customization dialog.
+1. Click on "Files" to open the file organization customization widget.
 
 2. **Sort by Type**: Move files into directories based on their file type (e.g., images, documents).
 
