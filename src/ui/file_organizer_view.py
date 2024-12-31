@@ -274,7 +274,7 @@ class FileOrganizerCustomizationDialog(QWidget):
         """
         folder_path = self.folder_input.text()
         if not folder_path:
-            self.show_status("No folder selected for scheduling.", "info")
+            self.show_status("Select a folder", "info")
             return
 
         # Determine which operation is checked (only one can be checked per your single_selection logic)
@@ -295,7 +295,7 @@ class FileOrganizerCustomizationDialog(QWidget):
             selected_task_type = "backup_files"
 
         if not selected_task_type:
-            self.show_status("No operation selected for scheduling.", "info")
+            self.show_status("Select an operation", "info")
             return
 
         # Now schedule using our shared SchedulerManager
@@ -311,9 +311,9 @@ class FileOrganizerCustomizationDialog(QWidget):
         user_friendly = TASK_LABELS.get(selected_task_type, selected_task_type)
         if selected_days:
             days_list = ", ".join(selected_days)
-            self.show_status(f"Scheduled {user_friendly} at {selected_time}\nOn {days_list}", "success")
+            self.show_status(f"{user_friendly} will run at {selected_time}\non {days_list}", "success")
         else:
-            self.show_status(f"Scheduled {user_friendly} at {selected_time}", "success")
+            self.show_status(f"{user_friendly} will run at {selected_time}", "success")
 
     def on_schedule_canceled(self):
         """Handles the schedule canceled signal and shows a toast notification."""

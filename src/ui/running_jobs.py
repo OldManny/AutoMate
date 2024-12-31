@@ -62,6 +62,15 @@ class RunningJobsModal(BaseModalWindow):
         self.jobs_container_layout = None
         self.header_spacing = 5  # Default spacing between header columns
         self.font_size = 12  # Default font size for text
+
+        # Center the modal relative to the parent
+        if parent:
+            parent_geometry = parent.geometry()
+            self.move(
+                parent_geometry.x() + (parent_geometry.width() - self.width()) // 2,
+                parent_geometry.y() + (parent_geometry.height() - self.height()) // 2,
+            )
+
         self.init_ui()
 
     def init_ui(self):
