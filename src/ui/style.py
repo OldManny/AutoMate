@@ -77,6 +77,16 @@ QFrame {
 }
 """
 
+# Running Modal separator
+
+SEPARATOR_SOLID = """
+QFrame {
+    border: 1px solid #4f4f4f;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+"""
+
 # Style for InfoWindow's central widget
 INFO_WINDOW_STYLE = """
 QWidget#central_widget {

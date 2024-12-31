@@ -89,6 +89,7 @@ class SchedulerManager:
                     "folder_target": job.kwargs.get("source_directory"),
                     "trigger": str(job.trigger),
                     "next_run_time": str(job.next_run_time) if job.next_run_time else None,
+                    "recurring_days": job.kwargs.get("recurring_days", []),
                 }
             )
         return scheduled
@@ -152,7 +153,11 @@ class SchedulerManager:
             func=task_callable,
             trigger=trigger,
             id=job_id,
-            kwargs={"source_directory": folder_target, "task_type": task_type},
+            kwargs={
+                "source_directory": folder_target,
+                "task_type": task_type,
+                "recurring_days": recurring_days,  # Include recurring days here
+            },
             replace_existing=True,
         )
 

@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 
 from src.automation.scheduler_manager import SchedulerManager
 from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
+from src.ui.running_jobs import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 
 
@@ -120,6 +121,7 @@ class MainApp(QMainWindow):
         layout.addWidget(auto_btn)
 
         running_btn = self.create_nav_button("Running", "assets/photos/running.png")
+        running_btn.clicked.connect(self.open_running_modal)  # Add this line
         layout.addWidget(running_btn)
 
         return sidebar
@@ -155,6 +157,10 @@ class MainApp(QMainWindow):
             file_organizer = current_widget.findChild(QWidget, "FileOrganizerWidget")
             if file_organizer:
                 file_organizer.open_schedule_modal()
+
+    def open_running_modal(self):
+        running_modal = RunningJobsModal(scheduler_manager=self.scheduler_manager, parent=self)
+        running_modal.exec_()
 
     def create_file_organizer_page(self):
         """
