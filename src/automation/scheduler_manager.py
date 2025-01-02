@@ -43,61 +43,54 @@ TASK_LABELS = {
 
 class SchedulerManager:
     """
-    Manages task scheduling using APScheduler, storing jobs persistently in a JSON file.
+    Manages task scheduling using APScheduler,
+    storing jobs persistently in a JSON file.
     """
 
     def __init__(self, jobs_file: str = "scheduled_jobs.json"):
-        # Initialize the scheduler and job storage
         self.jobs_file = jobs_file
         self.scheduler = BackgroundScheduler()
+        self.job_metadata = {}
         self.scheduler.add_listener(self._job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
         self.scheduler.start()
         self.load_jobs_from_file()
 
     def _job_listener(self, event):
-        """Handle job events (e.g., job completion or error)."""
-        job = self.scheduler.get_job(event.job_id)
-        if not job:
-            return  # Skip if the job no longer exists
-
-        # Automatically remove one-time jobs after execution
-        if "DateTrigger" in str(job.trigger):
-            self.remove_scheduled_job(event.job_id)
-
-    def load_jobs_from_file(self):
-        """Load scheduled jobs from a JSON file into the scheduler."""
-        if not os.path.exists(self.jobs_file):
+        """Handle job execution events and cleanup for one-time jobs."""
+        if event.code == EVENT_JOB_ERROR:
             return
 
-        with open(self.jobs_file, "r") as f:
-            try:
-                job_list = json.load(f)
-            except json.JSONDecodeError:
-                job_list = []
+        job_data = self._get_job_from_file(event.job_id)
+        if job_data and not job_data.get('recurring_days', []):
+            self._cleanup_json_file(event.job_id)
 
-        for job_data in job_list:
-            self._schedule_job(job_data, persist=False)
+    def _get_job_from_file(self, job_id):
+        """Read job data directly from JSON file."""
+        try:
+            if os.path.exists(self.jobs_file):
+                with open(self.jobs_file, "r") as f:
+                    job_list = json.load(f)
+                    return next((job for job in job_list if job["job_id"] == job_id), None)
+        except Exception:
+            return None
 
-    def list_scheduled_jobs(self):
-        """Provide a summary of currently scheduled jobs."""
-        scheduled = []
-        for job in self.scheduler.get_jobs():
-            scheduled.append(
-                {
-                    "job_id": job.id,
-                    "task_type": job.kwargs.get("task_type"),
-                    "folder_target": job.kwargs.get("source_directory"),
-                    "trigger": str(job.trigger),
-                    "next_run_time": str(job.next_run_time) if job.next_run_time else None,
-                    "recurring_days": job.kwargs.get("recurring_days", []),
-                }
-            )
-        return scheduled
+    def _cleanup_json_file(self, job_id):
+        """Remove a job from the JSON file."""
+        try:
+            if os.path.exists(self.jobs_file):
+                with open(self.jobs_file, "r") as f:
+                    job_list = json.load(f)
+
+                updated_jobs = [j for j in job_list if j["job_id"] != job_id]
+
+                if len(updated_jobs) != len(job_list):
+                    with open(self.jobs_file, "w") as f:
+                        json.dump(updated_jobs, f, indent=2)
+        except Exception:
+            pass
 
     def add_scheduled_job(self, task_type, folder_target, run_time, recurring_days=None, job_id=None):
-        """
-        Add a new job to the scheduler. Supports recurring or one-time scheduling.
-        """
+        """Add a new job to the scheduler."""
         if not job_id:
             job_id = f"{task_type}_{datetime.now().timestamp()}"
 
@@ -112,7 +105,7 @@ class SchedulerManager:
         return job_id
 
     def _schedule_job(self, job_data, persist=True):
-        """Internal: Add a job to APScheduler and optionally persist it."""
+        """Add a job to APScheduler and optionally persist it."""
         job_id = job_data["job_id"]
         task_type = job_data["task_type"]
         folder_target = job_data["folder_target"]
@@ -122,7 +115,8 @@ class SchedulerManager:
         hour, minute = map(int, run_time.split(":"))
         now = datetime.now()
 
-        # Choose trigger type based on recurrence
+        self.job_metadata[job_id] = {"recurring_days": recurring_days}
+
         if recurring_days:
             day_map = {
                 "Monday": "mon",
@@ -136,19 +130,15 @@ class SchedulerManager:
             day_of_week = ",".join(day_map[d] for d in recurring_days)
             trigger = CronTrigger(day_of_week=day_of_week, hour=hour, minute=minute)
         else:
-            # Schedule one-time for today or tomorrow
             schedule_today = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if schedule_today <= now:
                 schedule_today = schedule_today.replace(day=schedule_today.day + 1)
             trigger = DateTrigger(run_date=schedule_today)
 
-        # Retrieve the callable task function
         task_callable = TASK_FUNCTIONS.get(task_type)
         if not task_callable:
-            print(f"Warning: No function found for '{task_type}'.")
             return
 
-        # Schedule the job in APScheduler
         self.scheduler.add_job(
             func=task_callable,
             trigger=trigger,
@@ -156,7 +146,7 @@ class SchedulerManager:
             kwargs={
                 "source_directory": folder_target,
                 "task_type": task_type,
-                "recurring_days": recurring_days,  # Include recurring days here
+                "recurring_days": recurring_days,
             },
             replace_existing=True,
         )
@@ -166,38 +156,55 @@ class SchedulerManager:
 
     def _write_job_to_file(self, job_data):
         """Persist job data in a JSON file."""
-        job_list = []
-        if os.path.exists(self.jobs_file):
-            with open(self.jobs_file, "r") as f:
-                try:
+        try:
+            job_list = []
+            if os.path.exists(self.jobs_file):
+                with open(self.jobs_file, "r") as f:
                     job_list = json.load(f)
-                except json.JSONDecodeError:
-                    job_list = []
 
-        # Remove old job data if updating
-        job_list = [j for j in job_list if j["job_id"] != job_data["job_id"]]
-        job_list.append(job_data)
+            job_list = [j for j in job_list if j["job_id"] != job_data["job_id"]]
+            job_list.append(job_data)
 
-        with open(self.jobs_file, "w") as f:
-            json.dump(job_list, f, indent=2)
-
-    def remove_scheduled_job(self, job_id):
-        """Remove a job from APScheduler and the JSON file."""
-        self.scheduler.remove_job(job_id)
-        if os.path.exists(self.jobs_file):
-            with open(self.jobs_file, "r") as f:
-                try:
-                    job_list = json.load(f)
-                except json.JSONDecodeError:
-                    job_list = []
-            job_list = [j for j in job_list if j["job_id"] != job_id]
             with open(self.jobs_file, "w") as f:
                 json.dump(job_list, f, indent=2)
+        except Exception:
+            pass
+
+    def list_scheduled_jobs(self):
+        """Provide a summary of currently scheduled jobs."""
+        return [
+            {
+                "job_id": job.id,
+                "task_type": job.kwargs.get("task_type"),
+                "folder_target": job.kwargs.get("source_directory"),
+                "trigger": str(job.trigger),
+                "next_run_time": str(job.next_run_time) if job.next_run_time else None,
+                "recurring_days": job.kwargs.get("recurring_days", []),
+            }
+            for job in self.scheduler.get_jobs()
+        ]
+
+    def load_jobs_from_file(self):
+        """Load scheduled jobs from a JSON file into the scheduler."""
+        if not os.path.exists(self.jobs_file):
+            return
+
+        try:
+            with open(self.jobs_file, "r") as f:
+                job_list = json.load(f)
+                for job_data in job_list:
+                    self._schedule_job(job_data, persist=False)
+        except Exception:
+            pass
+
+    def remove_scheduled_job(self, job_id):
+        """Remove a job from both the scheduler and JSON file."""
+        self._cleanup_json_file(job_id)
+        try:
+            self.scheduler.remove_job(job_id)
+        except Exception:
+            pass
 
     def shutdown(self):
         """Shut down the APScheduler instance."""
         self.scheduler.shutdown()
-
-
-if __name__ == "__main__":
-    manager = SchedulerManager()
