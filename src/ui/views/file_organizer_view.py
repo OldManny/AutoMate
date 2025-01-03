@@ -13,17 +13,17 @@ from src.automation.file_organizer import (
     sort_by_type,
     undo_last_operation,
 )
-from src.ui.components import (
-    InfoWindow,
-    ScheduleModalWindow,
+from src.ui.components.components import (
     create_button,
     create_card,
     create_folder_input,
     create_icon_button,
     create_separator,
 )
+from src.ui.components.toast_notification import ToastNotification
+from src.ui.modals.info_modal import InfoWindow
+from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
-from src.ui.toast_notification import ToastNotification
 
 
 class FileOrganizerCustomizationDialog(QWidget):

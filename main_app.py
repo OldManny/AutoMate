@@ -17,9 +17,9 @@ from PyQt5.QtWidgets import (
 )
 
 from daemon import SchedulerManager
-from src.ui.file_organizer_view import FileOrganizerCustomizationDialog
-from src.ui.running_jobs import RunningJobsModal
+from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
+from src.ui.views.file_organizer_view import FileOrganizerCustomizationDialog
 
 
 class MainApp(QMainWindow):
