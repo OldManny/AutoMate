@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
 
-from src.automation.scheduler_manager import TASK_LABELS
+from daemon import TASK_LABELS
 from src.ui.base_modal import BaseModalWindow
 from src.ui.components import create_button, create_icon_button, create_separator
-from src.ui.style import BLUE_BUTTON_STYLE, INFO_WINDOW_STYLE
+from src.ui.style import BLUE_BUTTON_STYLE, INFO_WINDOW_STYLE, TOOLTIP_STYLE
 
 # Abbreviations for day names
 DAY_ABBREVIATIONS = {
@@ -20,32 +21,86 @@ DAY_ABBREVIATIONS = {
 }
 
 
+class CustomTooltip(QWidget):
+    """
+    A custom tooltip widget to show full text for truncated elements.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.ToolTip)
+        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet(TOOLTIP_STYLE)
+
+        self.label = QLabel(self)
+        self.label.setAlignment(Qt.AlignLeft)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+    # Override the show and hide methods to control the tooltip display
+    def show_tooltip(self, text, position):
+        """Display the tooltip with the given text and position."""
+        self.label.setText(text)
+        self.adjustSize()
+        self.move(position)
+        self.show()
+
+    def hide_tooltip(self):
+        """Hide the tooltip."""
+        self.hide()
+
+
 class ElidedLabel(QLabel):
     """
     Custom QLabel that truncates text with ellipsis if it exceeds the max width.
-    Displays the full text as a tooltip.
+    Displays the full text using a custom tooltip only if the text is truncated.
     """
+
+    tooltip = None  # Shared tooltip instance
 
     def __init__(self, text, max_width=None, font_size=None):
         super().__init__(text)
         self.full_text = text
         self.max_width = max_width
-        self.setToolTip(text)  # Show full text in tooltip
 
         if max_width:
             self.setMaximumWidth(max_width)
         if font_size:
             self.setStyleSheet(f"font-size: {font_size}pt;")
 
+        # Create a shared tooltip instance if not already created
+        if not ElidedLabel.tooltip:
+            ElidedLabel.tooltip = CustomTooltip()
+
+    # Override the paintEvent method to render elided text
     def paintEvent(self, event):
-        """Override to render elided text if necessary."""
+        """Override to render elided text."""
         if self.max_width:
             metrics = self.fontMetrics()
             if metrics.horizontalAdvance(self.full_text) > self.max_width:
                 elided_text = metrics.elidedText(self.full_text, Qt.ElideMiddle, self.max_width)
-                if self.text() != elided_text:
-                    self.setText(elided_text)
+                self.setText(elided_text)
+            else:
+                self.setText(self.full_text)
         super().paintEvent(event)
+
+    # Override the enterEvent and leaveEvent methods to show/hide the tooltip
+    def enterEvent(self, event):
+        """Show tooltip when hovering over truncated text."""
+        if self.max_width:
+            metrics = QFontMetrics(self.font())
+            if metrics.horizontalAdvance(self.full_text) > self.max_width:
+                # Show custom tooltip
+                global_position = self.mapToGlobal(self.rect().bottomLeft())
+                ElidedLabel.tooltip.show_tooltip(self.full_text, global_position)
+        super().enterEvent(event)
+
+    # Override the leaveEvent method to hide the tooltip
+    def leaveEvent(self, event):
+        """Hide tooltip when leaving the label."""
+        ElidedLabel.tooltip.hide_tooltip()
+        super().leaveEvent(event)
 
 
 class RunningJobsModal(BaseModalWindow):
@@ -87,7 +142,7 @@ class RunningJobsModal(BaseModalWindow):
         header_layout.setSpacing(self.header_spacing)
         header_layout.setContentsMargins(0, 0, 0, 0)
 
-        header_widths = {"Type": 90, "Target": 125, "Time": 9, "Days": 9, "": 10}  # Cancel column
+        header_widths = {"Type": 90, "Target": 125, "Time": 9, "Days": 9, "": 10}
 
         for text, width_percent in header_widths.items():
             label = QLabel(text)
@@ -104,7 +159,7 @@ class RunningJobsModal(BaseModalWindow):
 
         header_widget = QWidget()
         header_widget.setLayout(header_layout)
-        header_widget.setFixedHeight(15)
+        header_widget.setFixedHeight(16)
         self.main_layout.addWidget(header_widget)
 
         # Separator below header
@@ -210,7 +265,6 @@ class RunningJobsModal(BaseModalWindow):
             row_layout.addWidget(label)
 
         cancel_btn = create_icon_button("assets/photos/cancel.png", icon_size=(11, 11), button_size=(13, 13))
-        cancel_btn.setToolTip("Cancel this scheduled operation")
         cancel_btn.clicked.connect(lambda _, j_id=job_id: self.on_cancel_job(j_id))
         cancel_btn.setFixedWidth(self.COLUMN_WIDTHS["Cancel"])
         row_layout.addWidget(cancel_btn)

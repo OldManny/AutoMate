@@ -130,10 +130,8 @@ class SchedulerManager:
             logger.error(f"Job {event.job_id} raised an error during execution.")
             return  # Skip error handling for now
 
-        logger.info(f"Job {event.job_id} executed successfully.")
         job_data = self._get_job_from_file(event.job_id)
         if job_data and not job_data.get('recurring_days', []):  # Only clean up non-recurring jobs
-            logger.info(f"Removing one-time job {event.job_id} from JSON after completion.")
             self._cleanup_json_file(event.job_id)
 
     def _get_job_from_file(self, job_id):
@@ -376,7 +374,7 @@ def run_daemon():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received. Stopping daemon.")
+        print("\nShutting down daemon...")
         manager.shutdown()
         observer.stop()
     except Exception as e:

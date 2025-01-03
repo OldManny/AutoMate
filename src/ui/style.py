@@ -77,16 +77,6 @@ QFrame {
 }
 """
 
-# Running Modal separator
-
-SEPARATOR_SOLID = """
-QFrame {
-    border: 1px solid #4f4f4f;
-    margin-left: 3px;
-    margin-right: 3px;
-}
-"""
-
 # Style for InfoWindow's central widget
 INFO_WINDOW_STYLE = """
 QWidget#central_widget {
@@ -176,4 +166,14 @@ TOAST_NOTIFICATION_STYLE = """
 QWidget {
     background-color: #333333; /* Dark gray background */
 }
+"""
+
+################ ToolTip Style ################
+
+TOOLTIP_STYLE = """
+    background-color: #494949;
+    color: white;
+    border: none; /* Or change to '1px solid #4f4f4f' if needed */
+    border-radius: 5px;
+    padding: 2px;
 """

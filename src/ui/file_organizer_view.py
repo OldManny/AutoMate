@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QCheckBox, QFileDialog, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
+from daemon import TASK_LABELS
 from src.automation.file_organizer import (
     backup_files,
     compress_files,
@@ -12,7 +13,6 @@ from src.automation.file_organizer import (
     sort_by_type,
     undo_last_operation,
 )
-from src.automation.scheduler_manager import TASK_LABELS
 from src.ui.components import (
     InfoWindow,
     ScheduleModalWindow,
