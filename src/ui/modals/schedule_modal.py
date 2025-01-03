@@ -13,6 +13,10 @@ from src.ui.style import (
 
 
 class ScheduleModalWindow(BaseModalWindow):
+    """
+    Modal window for setting an automation schedule.
+    """
+
     schedule_saved = pyqtSignal(str, list)  # Signal to send time and days on save
     schedule_canceled = pyqtSignal()  # Signal to indicate cancellation
 

@@ -1,3 +1,11 @@
+################ Main Window Style ################
+
+MAIN_WINDOW_STYLE = """
+QMainWindow {
+    background-color: #3B4F52;
+}
+"""
+
 ################ Button Styles ################
 
 # Style for blue-colored buttons
@@ -129,6 +137,8 @@ QLabel {
 }
 """
 
+################ Sidebar Style ################
+
 SIDEBAR_STYLE = """
 QWidget {
     background-color: #333333;
@@ -137,11 +147,6 @@ QWidget {
 }
 """
 
-MAIN_WINDOW_STYLE = """
-QMainWindow {
-    background-color: #3B4F52;
-}
-"""
 ############## Sidebar Navigation Button Style ##############
 
 NAV_BUTTON_STYLE = """
