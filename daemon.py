@@ -353,7 +353,7 @@ class SchedulerManager:
 def run_daemon():
     """
     Run the daemon with watchdog to detect changes in scheduled_jobs.json.
-    Logs go to a temporary file, deleted on normal exit.
+    Logs go to a temporary file, deleted on normal exit or interrupt.
     """
     # Set up temporary logging
     setup_temporary_logging()
@@ -374,9 +374,21 @@ def run_daemon():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt detected. Shutting down gracefully.")
         print("\nShutting down daemon...")
         manager.shutdown()
         observer.stop()
+
+        # Explicitly remove the temporary log file
+        for handler in logging.getLogger().handlers[:]:
+            if isinstance(handler, logging.FileHandler):
+                try:
+                    log_filename = handler.baseFilename
+                    handler.close()
+                    os.remove(log_filename)
+                    logger.info(f"Temporary log file {log_filename} deleted.")
+                except Exception as e:
+                    logger.error(f"Failed to delete temporary log file: {e}")
     except Exception as e:
         logger.error(f"Daemon error: {e}")
         manager.shutdown()

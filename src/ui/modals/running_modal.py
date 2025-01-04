@@ -1,4 +1,5 @@
 from datetime import datetime
+import sys
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
@@ -30,11 +31,18 @@ class RunningJobsModal(BaseModalWindow):
     COLUMN_WIDTHS = {"Type": 93, "Target": 120, "Time": 30, "Days": 50, "Cancel": 13}
 
     def __init__(self, scheduler_manager, parent=None):
+        # Determine font size and weight based on platform
+        if sys.platform == "win32":
+            self.font_size = 9
+            self.font_weight = "600"  # Demibold
+        else:
+            self.font_size = 12  # Larger font for macOS
+            self.font_weight = "bold"
+
         super().__init__(width=400, height=400, style_sheet=INFO_WINDOW_STYLE, parent=parent)
         self.scheduler_manager = scheduler_manager
         self.jobs_container_layout = None
         self.header_spacing = 5  # Default spacing between header columns
-        self.font_size = 12  # Default font size for text
 
         # Center the modal relative to the parent
         if parent:
@@ -66,10 +74,10 @@ class RunningJobsModal(BaseModalWindow):
             label = QLabel(text)
             label.setStyleSheet(
                 f"""
-                font-weight: bold;
+                font-weight: {self.font_weight};  /* Platform-specific font weight */
                 color: #C9D3D5;
-                font-size: {self.font_size}pt;
-            """
+                font-size: {self.font_size}pt;  /* Platform-specific font size */
+                """
             )
             label.setAlignment(Qt.AlignLeft)
             label.setMinimumWidth(int(self.width() * width_percent / 100))
@@ -77,7 +85,7 @@ class RunningJobsModal(BaseModalWindow):
 
         header_widget = QWidget()
         header_widget.setLayout(header_layout)
-        header_widget.setFixedHeight(16)
+        header_widget.setFixedHeight(17)
         self.main_layout.addWidget(header_widget)
 
         # Separator below header
@@ -90,6 +98,11 @@ class RunningJobsModal(BaseModalWindow):
         self.jobs_container_layout.setSpacing(0)
 
         scroll_area = QScrollArea()
+        self.jobs_container.setStyleSheet(
+            """
+            background-color: #333333;  /* Dark gray background */
+        """
+        )
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.jobs_container)
         scroll_area.setStyleSheet("border: none;")
@@ -104,7 +117,7 @@ class RunningJobsModal(BaseModalWindow):
         button_layout.setContentsMargins(0, 0, 0, 0)
         button_layout.addStretch()
 
-        ok_button = create_button("OK", BLUE_BUTTON_STYLE)
+        ok_button = create_button("Done", BLUE_BUTTON_STYLE)
         ok_button.setFixedSize(80, 30)
         ok_button.clicked.connect(self.accept)
         button_layout.addWidget(ok_button)
@@ -189,7 +202,7 @@ class RunningJobsModal(BaseModalWindow):
 
         row_widget = QWidget()
         row_widget.setLayout(row_layout)
-        row_widget.setStyleSheet(f"background-color: {background_color}; font-size: {self.font_size}pt;")
+        row_widget.setStyleSheet(f"background-color: {background_color}; font-size: {self.font_size}pt; color: white;")
         return row_widget
 
     def on_cancel_job(self, job_id):

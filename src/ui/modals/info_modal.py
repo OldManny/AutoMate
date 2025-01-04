@@ -12,7 +12,7 @@ class InfoWindow(BaseModalWindow):
     """
 
     def __init__(self, info_text, parent=None):
-        super().__init__(width=370, height=200, style_sheet=INFO_WINDOW_STYLE, parent=parent)
+        super().__init__(width=370, height=215, style_sheet=INFO_WINDOW_STYLE, parent=parent)
 
         # Info text label
         info_label = QLabel(info_text)

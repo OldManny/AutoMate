@@ -67,6 +67,10 @@ QWidget[class="card"] {
     border-radius: 8px;
     margin: 1px 0px;
     padding: 8px 8px;
+    color: white;
+}
+QCheckBox {
+    color: white;
 }
 """
 
@@ -91,6 +95,9 @@ QWidget#central_widget {
     background-color: #333333;
     border-radius: 10px;
     border: 1px solid #4f4f4f;
+}
+QCheckBox {
+    font-size: 10px;
 }
 """
 

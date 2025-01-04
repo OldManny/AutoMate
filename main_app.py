@@ -221,10 +221,11 @@ if __name__ == "__main__":
     font_path = os.path.abspath("assets/fonts/Poppins-Medium.ttf")
     font_id = QFontDatabase.addApplicationFont(font_path)
     if font_id == -1:
-        print(f"Failed to load Poppins font from {font_path}. Falling back to default.")
+        print(f"Failed to load Poppins font from {font_path}. Falling back to Arial.")
+        app.setFont(QFont("Arial", 10 if sys.platform == "win32" else 13))
     else:
         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-        app.setFont(QFont(font_family, 13))
+        app.setFont(QFont(font_family, 10 if sys.platform == "win32" else 13))
 
     # Run the main application
     main_app = MainApp()
