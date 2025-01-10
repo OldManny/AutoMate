@@ -1,3 +1,5 @@
+import re
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QCheckBox, QLabel, QLineEdit, QVBoxLayout, QWidget
 
@@ -5,6 +7,16 @@ from src.ui.components.auth_utils import generate_remember_me_token, register_us
 from src.ui.components.components import create_button
 from src.ui.components.toast_notification import ToastNotification
 from src.ui.style import BLUE_BUTTON_STYLE, MAIN_WINDOW_STYLE
+
+EMAIL_REGEX = r'^[^@]+@[^@]+\.[^@]+$'
+
+
+def is_valid_email(email: str) -> bool:
+    """
+    Returns True if email is a valid email address, else False.
+    """
+    pattern = re.compile(EMAIL_REGEX)
+    return pattern.match(email) is not None
 
 
 class LoginView(QWidget):
@@ -191,6 +203,11 @@ class LoginView(QWidget):
             self.toast.show_message("Please fill all fields.", "error")
             return
 
+        # 1) Validate email format before continuing (see next section).
+        if not is_valid_email(email):
+            self.toast.show_message("Invalid email format!", "error")
+            return
+
         if password != confirm_password:
             self.toast.show_message("Passwords do not match!", "error")
             return
@@ -201,7 +218,14 @@ class LoginView(QWidget):
             self.toast.show_message("User already exists!", "error")
         else:
             self.toast.show_message("Registration successful! Please log in.", "info")
-            # Switch automatically back to login
+
+            # Fill the login form’s email input with the newly registered email
+            self.email_input_login.setText(email)
+
+            # Clear the login form’s password field to avoid any auto-fill
+            self.password_input_login.setText("")
+
+            # Switch to login mode
             self.show_login_mode()
 
     def custom_input_style(self):
