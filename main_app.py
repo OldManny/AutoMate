@@ -17,23 +17,42 @@ from PyQt5.QtWidgets import (
 )
 
 from daemon import SchedulerManager
+from src.ui.components.auth_utils import get_user_by_token, load_user_data
 from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 from src.ui.views.file_organizer_view import FileOrganizerCustomizationDialog
+from src.ui.views.login_view import LoginView
 
 
 class MainApp(QMainWindow):
     """
     Main application window for AutoMate with a sidebar and multiple pages.
+    Includes a login page (index 0) and then the normal content pages (1,2,3).
     """
 
     def __init__(self):
         super().__init__()
         self.setFixedSize(588, 600)  # Fixed window size
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Disable maximize button
-        self.setStyleSheet(MAIN_WINDOW_STYLE)  # Apply main window style
+        self.setStyleSheet(MAIN_WINDOW_STYLE)
+
         self.scheduler_manager = SchedulerManager()
+
+        # Track the login state
+        self.logged_in = False  # Will set to True once user logs in successfully
+
+        # Build the UI
         self.initUI()
+
+        # Create the login page and insert it at index 0
+        self.login_view = LoginView()
+        self.stacked_widget.insertWidget(0, self.login_view)
+
+        # Listen for successful login
+        self.login_view.login_success.connect(self.on_login_success)
+
+        # Check if user is remembered
+        self.check_remembered_user()
 
     def initUI(self):
         """
@@ -47,7 +66,7 @@ class MainApp(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Create
+        # Create the sidebar
         self.sidebar = self.create_sidebar()
 
         # Add shadow effect to the sidebar
@@ -57,6 +76,10 @@ class MainApp(QMainWindow):
         shadow.setYOffset(0)
         shadow.setColor(QColor(0, 0, 0, 250))
         self.sidebar.setGraphicsEffect(shadow)
+
+        # By default, hide the sidebar if not logged in
+        self.sidebar.setVisible(False)  # << HIDE on startup
+
         main_layout.addWidget(self.sidebar)
 
         # Create content area
@@ -67,9 +90,11 @@ class MainApp(QMainWindow):
 
         # Stack for switching between pages
         self.stacked_widget = QStackedWidget()
-        self.stacked_widget.addWidget(self.create_file_organizer_page())
-        self.stacked_widget.addWidget(self.create_email_page())
-        self.stacked_widget.addWidget(self.create_data_entry_page())
+
+        # Insert placeholders for the main pages at indices 1, 2, 3
+        self.stacked_widget.addWidget(self.create_file_organizer_page())  # index 1
+        self.stacked_widget.addWidget(self.create_email_page())  # index 2
+        self.stacked_widget.addWidget(self.create_data_entry_page())  # index 3
 
         content_layout.addWidget(self.stacked_widget)
         main_layout.addWidget(self.content_area)
@@ -85,7 +110,7 @@ class MainApp(QMainWindow):
         Creates the sidebar with navigation buttons and additional options.
         """
         sidebar = QWidget()
-        sidebar.setFixedWidth(150)  # Fixed width for the sidebar
+        sidebar.setFixedWidth(150)
         sidebar.setStyleSheet(SIDEBAR_STYLE)
 
         layout = QVBoxLayout(sidebar)
@@ -98,9 +123,9 @@ class MainApp(QMainWindow):
 
         # Navigation buttons
         nav_buttons = [
-            ("Files", 0, "assets/photos/file.png"),
-            ("Email", 1, "assets/photos/email.png"),
-            ("Data", 2, "assets/photos/data.png"),
+            ("Files", 1, "assets/photos/file.png"),
+            ("Email", 2, "assets/photos/email.png"),
+            ("Data", 3, "assets/photos/data.png"),
         ]
 
         for text, index, icon_path in nav_buttons:
@@ -110,18 +135,17 @@ class MainApp(QMainWindow):
             btn.clicked.connect(lambda checked, idx=index: self.on_nav_button_clicked(idx))
             layout.addWidget(btn)
 
-        # Set the first button as initially checked
+        # Mark the first button (Files) as initially checked
         first_button = self.nav_button_group.buttons()[0]
         first_button.setChecked(True)
 
-        # Add a spacer and additional buttons
         layout.addStretch()
         auto_btn = self.create_nav_button("Schedule", "assets/photos/schedule.png")
         auto_btn.clicked.connect(self.open_schedule_modal)
         layout.addWidget(auto_btn)
 
         running_btn = self.create_nav_button("Running", "assets/photos/running.png")
-        running_btn.clicked.connect(self.open_running_modal)  # Add this line
+        running_btn.clicked.connect(self.open_running_modal)
         layout.addWidget(running_btn)
 
         return sidebar
@@ -134,7 +158,6 @@ class MainApp(QMainWindow):
         if os.path.exists(icon_path):
             icon = QIcon(icon_path)
             button.setIcon(icon)
-            # Set the icon size
             button.setIconSize(QSize(27, 27))  # Icon size
             button.setFixedHeight(50)
             button.setText("  " + text)  # Add space for text alignment
@@ -144,14 +167,22 @@ class MainApp(QMainWindow):
 
     def on_nav_button_clicked(self, index):
         """
-        Switches to the selected page in the stacked widget.
+        Switches to the selected page if user is logged in; otherwise do nothing.
         """
+        # Restrict the user’s access to the main pages if not logged in
+        if not self.logged_in:
+            self.stacked_widget.setCurrentIndex(0)  # Force back to login
+            return
+
         self.stacked_widget.setCurrentIndex(index)
 
     def open_schedule_modal(self):
         """
-        Opens the scheduling modal for automation.
+        Opens the scheduling modal for automation, but only if logged in.
         """
+        if not self.logged_in:
+            self.stacked_widget.setCurrentIndex(0)
+            return
         current_widget = self.stacked_widget.currentWidget()
         if isinstance(current_widget, QWidget):
             file_organizer = current_widget.findChild(QWidget, "FileOrganizerWidget")
@@ -159,6 +190,12 @@ class MainApp(QMainWindow):
                 file_organizer.open_schedule_modal()
 
     def open_running_modal(self):
+        """
+        Opens the RunningJobsModal, if logged in.
+        """
+        if not self.logged_in:
+            self.stacked_widget.setCurrentIndex(0)
+            return
         running_modal = RunningJobsModal(scheduler_manager=self.scheduler_manager, parent=self)
         running_modal.exec_()
 
@@ -213,6 +250,54 @@ class MainApp(QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+    def check_remembered_user(self):
+        """
+        If a 'remember me' token is found in local JSON, skip login and show main app (index 1).
+        Otherwise, show login (index 0).
+        """
+        try:
+            with open("last_token.txt", "r") as f:
+                token = f.read().strip()
+        except FileNotFoundError:
+            token = ""
+
+        if token:
+            user_email = get_user_by_token(token)
+            if user_email:
+                # Valid user => set self.logged_in and show the "Files" page
+                self.logged_in = True
+                self.sidebar.setVisible(True)  # Show sidebar
+                self.stacked_widget.setCurrentIndex(1)
+                return
+
+        # Otherwise, show login
+        self.logged_in = False
+        self.sidebar.setVisible(False)
+        self.stacked_widget.setCurrentIndex(0)
+
+    def on_login_success(self, email):
+        """
+        Called when user logs in or registers successfully.
+        """
+        # Find the user's token in the JSON
+        data = load_user_data()
+        token = ""
+        for user in data["users"]:
+            if user["email"].lower() == email.lower():
+                token = user["remember_me_token"]
+                break
+
+        if token:
+            with open("last_token.txt", "w") as f:
+                f.write(token)
+
+        # Mark logged_in = True and show sidebar
+        self.logged_in = True
+        self.sidebar.setVisible(True)
+
+        # Switch to the "Files" page
+        self.stacked_widget.setCurrentIndex(1)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -228,6 +313,6 @@ if __name__ == "__main__":
         app.setFont(QFont(font_family, 10 if sys.platform == "win32" else 13))
 
     # Run the main application
-    main_app = MainApp()
-    main_app.show()
+    main_window = MainApp()
+    main_window.show()
     sys.exit(app.exec_())

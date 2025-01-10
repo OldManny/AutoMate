@@ -10,6 +10,11 @@ __pycache__/
 scheduled_jobs.json
 operation_log.json
 
+# User login/register data
+user_data.json
+last_token.txt
+
+
 # Distribution / packaging
 .Python
 build/
