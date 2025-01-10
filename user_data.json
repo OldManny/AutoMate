@@ -1,0 +1,14 @@
+{
+    "users": [
+        {
+            "email": "em@gmail.com",
+            "hashed_password": "$2b$12$pN1m687kdzRQKuQVYtoCB.DCg/kbo03vmNFV8h0QlEBBoRadgP7yu",
+            "remember_me_token": ""
+        },
+        {
+            "email": "m@gmail.com",
+            "hashed_password": "$2b$12$QynEAy1yFR9EQJifki7/B.wuTznQ8LpZmCBmEUfolGC3Iez3D7Twe",
+            "remember_me_token": ""
+        }
+    ]
+}
