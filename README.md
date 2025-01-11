@@ -8,6 +8,10 @@
 
 This tool is designed to automate various tasks such as organizing files, sending emails, and automating data entry. It is built using Python and PyQt5 for the user interface.
 
+<p align="center">
+  <img src="images/Login.png" alt="Login Dialog" />
+</p>
+
 # Table of Contents
 
 - [Features](#features)
