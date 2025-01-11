@@ -6,7 +6,7 @@
 
 </div>
 
-This tool is designed to automate various tasks such as organizing files, sending emails, and automating data entry. It is built using Python and PyQt5 for the user interface.
+**AutoMate** is a Python-based tool that automates common tasks like organizing files, sending emails, and handling data entry. Its user-friendly interface is built with PyQt5. Whether you need to keep files tidy, schedule recurring tasks, or manage data, AutoMate provides a convenient all-in-one solution.
 
 <p align="center">
   <img src="images/Login.png" alt="Login Dialog" />
@@ -16,11 +16,13 @@ This tool is designed to automate various tasks such as organizing files, sendin
 
 - [Features](#features)
 - [Setup](#setup)
+  - [Authentication](#authentication)
 - [Usage](#usage)
   - [Files](#files)
   - [Email](#email)
   - [Data](#data)
   - [Schedule](#schedule)
+  - [Running](#running)
   - [Info](#info)
 - [Undo](#undo)
 - [Testing](#testing)
@@ -29,11 +31,11 @@ This tool is designed to automate various tasks such as organizing files, sendin
 
 ## Features
 
-- **File Organization**: Sort files by type, date, size, detect duplicates, rename, compress, and backup files.
-- **Email Sending**: Easily send emails with attachments immediately or schedule them for later.
-- **Data Entry Automation**: Automate data entry for CSV, Excel, and PDF files.
-- **User-Friendly Interface**: Easy-to-use interface built with PyQt5.
-- **Automation Scheduling**: Schedule repetitive automation tasks to run at specified times.
+- **File Organization**: Sort files by type, date and size, rename, compress, and backup files. Detect and relocate duplicates with ease.
+- **Email Sending**: Quickly send emails with attachments or schedule them for later delivery (feature in active development).
+- **Data Entry Automation**: Streamline your workflow by automating data entry for various file formats (feature under development).
+- **Automation Scheduling**: Set automated tasks to run at specific times or days.
+- **User-Friendly Interface**: Access all features from a clean, intuitive PyQt5 interface.
 
 
 ## Setup
@@ -65,8 +67,18 @@ This tool is designed to automate various tasks such as organizing files, sendin
 
 5. **Set up environment variables**
 
-    Create a `.env` file in the root directory and add your API credentials and the src folder path. More instructions to come, once the Email automation feature is implemented.
+    Create a .env file in the root directory to store API credentials. (Further details will be added once the email automation feature is complete.)
 
+
+### Authentication
+
+When setting up AutoMate for the first time, you’ll now see a **Login** or **Register** prompt. Create your account using a secure password, which will be encrypted and stored locally.
+
+The login system:
+
+- **bcrypt-based encryption**: Passwords are hashed using bcrypt and stored locally for enhanced security.
+- **Local storage**: No passwords leave your machine. All authentication data remains under your control.
+- **Registration & login forms**: Register or log in to gain access to the application’s full feature set.
 
 
 ## Usage
@@ -78,7 +90,9 @@ This tool is designed to automate various tasks such as organizing files, sendin
   <img src="images/OrganizeFiles.png" alt="Organize Files Dialog" />
 </p>
 
-1. Click on "Files" to open the file organization customization widget.
+From the sidebar, select Files to open the file management area. The interface has been updated for clarity:
+
+1. **Select Folder**: Click on the folder icon and select the target folder.
 
 2. **Sort by Type**: Move files into directories based on their file type (e.g., images, documents).
 
@@ -86,13 +100,25 @@ This tool is designed to automate various tasks such as organizing files, sendin
 
 4. **Sort by Size**: Group files into categories based on their size.
 
-5. **Detect Duplicates**: Identify and move duplicate files to a "duplicates" directory.
+5. **Detect Duplicates**: Identify and move duplicate files to a "duplicates" folder.
 
-6. **Rename Files**: Rename files based on a specific pattern.
+6. **Rename Files**: Bulk rename with a specific naming pattern.
 
 7. **Compress Files**: Compress all files into a single ZIP archive.
 
-8. **Backup Files**: Create a backup of all files.
+8. **Backup Files**: Save an additional copy of your files.
+
+Use **Undo** to revert your last operation, and **Run** to execute your chosen tasks. Select **Schedule** from the sidebar to schedule one or more tasks.
+
+
+### Email
+
+**Under Development**: Sending emails and scheduling future deliveries.
+
+
+### Data
+
+**Under Development**: Automate data entry tasks for CSV, Excel, and PDF files.
 
 
 ### Schedule
@@ -103,40 +129,45 @@ Automate your tasks by scheduling them at specific times and days. The scheduler
   <img src="images/ScheduleAutomation.png" alt="Schedule Automation Modal" />
 </p>
 
-### Info
+### Running
 
-Get contextual information about features and their usage directly within the app through a clean and intuitive info modal.
+The Running modal provides real-time status and management of ongoing or scheduled tasks:
+
+  - **Type**: The type of task being executed (e.g., Sort by Size, Rename Files).
+  - **Target**: The target directory for the automation.
+  - **Time**: The scheduled time for the task.
+  - **Days**: Indicates recurring tasks by showing the selected days.
+
+Use the red ❌ icon to cancel a task before it begins.
 
 <p align="center">
-  <img src="images/InfoModal.png" alt="Info Modal Example" />
+  <img src="images/Running.png" alt="Running Modal" />
 </p>
 
-### Email
+### Info
 
-**Under Development**
+An Info modal offers quick, context-sensitive tips and instructions for each feature, making it easy to understand and use.
 
-
-### Data
-
-**Under Development**
-
+<p align="center">
+  <img src="images/InfoModal.png" alt="Info Modal" />
+</p>
 
 ## Undo
 
-Both the Organize Files and Automate Data Entry dialogs will include an "Undo" button. This feature allows reverting to the last operation performed. If something is done accidentally, it is easy to undo these actions and restore to the previous state.
+The Undo button in the File and Data dialogs will revert the last performed action. This is handy if you need to reverse an accidental move, rename, or other operation.
 
 
 ## Testing
 
-Tests for the **Files** module are completed and can be run using `pytest`. To execute the tests:
+To run tests for the Files module (others are in progress):
 
-1. Navigate to the project's root directory.
-2. Run the following command:
+1. Navigate to the project root directory.
+2. Execute:
     ```sh
     pytest tests/
     ```
 
-Tests for other modules like **Email** and **Data** are under development and will be added in future updates.
+Future tests for **Email** and **Data** modules are under development.
 
 
 ## Attribution
