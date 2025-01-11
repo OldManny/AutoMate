@@ -189,3 +189,16 @@ TOOLTIP_STYLE = """
     border-radius: 5px;
     padding: 2px;
 """
+
+
+####### Login/Register input fields Style #######
+
+INPUT_FIELDS_STYLE = """
+    QLineEdit {
+        background-color: #4B5D5C;
+        color: white;
+        border-radius: 18px;
+        padding: 8px;
+        margin: 5px 0;
+    }
+"""

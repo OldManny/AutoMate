@@ -17,11 +17,11 @@ from PyQt5.QtWidgets import (
 )
 
 from daemon import SchedulerManager
-from src.ui.components.auth_utils import get_user_by_token, load_user_data
 from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 from src.ui.views.file_organizer_view import FileOrganizerCustomizationDialog
 from src.ui.views.login_view import LoginView
+from src.utils.auth import get_user_by_token, load_user_data
 
 
 class MainApp(QMainWindow):

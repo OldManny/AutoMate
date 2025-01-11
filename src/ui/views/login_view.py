@@ -1,12 +1,12 @@
 import re
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QCheckBox, QLabel, QLineEdit, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
-from src.ui.components.auth_utils import generate_remember_me_token, register_user, verify_user
 from src.ui.components.components import create_button
 from src.ui.components.toast_notification import ToastNotification
-from src.ui.style import BLUE_BUTTON_STYLE, MAIN_WINDOW_STYLE
+from src.ui.style import BLUE_BUTTON_STYLE, INPUT_FIELDS_STYLE, MAIN_WINDOW_STYLE
+from src.utils.auth import generate_remember_me_token, register_user, verify_user
 
 EMAIL_REGEX = r'^[^@]+@[^@]+\.[^@]+$'
 
@@ -16,7 +16,7 @@ def is_valid_email(email: str) -> bool:
     Returns True if email is a valid email address, else False.
     """
     pattern = re.compile(EMAIL_REGEX)
-    return pattern.match(email) is not None
+    return bool(pattern.match(email))
 
 
 class LoginView(QWidget):
@@ -30,130 +30,178 @@ class LoginView(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
         self.toast = ToastNotification(self)
-
         self.setStyleSheet(MAIN_WINDOW_STYLE)
-        self.setFixedSize(400, 300)  # tweak as needed
 
-        # Implemented two layouts: login_layout, register_layout
+        # Outer layout for the entire LoginView
+        self.outer_layout = QVBoxLayout(self)
+        self.outer_layout.setContentsMargins(0, 0, 0, 0)
+        self.outer_layout.setSpacing(0)
+
+        # Create placeholders for login & register widgets
+        self.login_widget = QWidget()
+        self.register_widget = QWidget()
+
+        # Build the two modes
         self.init_login_ui()
         self.init_register_ui()
 
-        # By default, show login layout
+        # Add them to the outer layout (filling the space)
+        self.outer_layout.addWidget(self.login_widget)
+        self.outer_layout.addWidget(self.register_widget)
+
+        # Default mode
         self.current_mode = "login"
         self.setup_login_mode()
 
     def init_login_ui(self):
-        """
-        Creates all widgets for the login form.
-        """
-        self.login_widget = QWidget(self)
-        self.login_widget.setGeometry(0, 0, 400, 300)
-
+        '''
+        Initialize the login page UI
+        '''
         layout = QVBoxLayout(self.login_widget)
-        layout.setSpacing(10)
-        layout.setAlignment(Qt.AlignCenter)
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
 
-        # Title / Welcome
+        # Title top-center
         welcome_label = QLabel("Welcome! Please log in.")
-        welcome_label.setStyleSheet("color: white; font-size: 16px;")
-        welcome_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(welcome_label)
+        welcome_label.setStyleSheet("color: #C9D3D5; font-size: 25px;")
+        welcome_label.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(welcome_label, 0, Qt.AlignTop)
+
+        # Stretch to push fields to the vertical middle
+        layout.addStretch()
+
+        # Middle fields
+        fields_layout = QVBoxLayout()
+        fields_layout.setSpacing(15)
+        fields_layout.setAlignment(Qt.AlignHCenter)
 
         # Email field
         self.email_input_login = QLineEdit()
         self.email_input_login.setPlaceholderText("Email")
-        self.email_input_login.setStyleSheet(self.custom_input_style())
-        layout.addWidget(self.email_input_login)
+        self.email_input_login.setStyleSheet(INPUT_FIELDS_STYLE)
+        self.email_input_login.setMaximumWidth(300)  # limit width
+
+        # Pressing Enter inside email field triggers login
+        self.email_input_login.returnPressed.connect(self.on_login_clicked)
+        fields_layout.addWidget(self.email_input_login)
 
         # Password field
         self.password_input_login = QLineEdit()
         self.password_input_login.setEchoMode(QLineEdit.Password)
         self.password_input_login.setPlaceholderText("Password")
-        self.password_input_login.setStyleSheet(self.custom_input_style())
-        layout.addWidget(self.password_input_login)
+        self.password_input_login.setStyleSheet(INPUT_FIELDS_STYLE)
+        self.password_input_login.setMaximumWidth(300)
 
-        # "Remember Me" checkbox
+        # Pressing Enter inside password field triggers login
+        self.password_input_login.returnPressed.connect(self.on_login_clicked)
+        fields_layout.addWidget(self.password_input_login)
+
+        # Remember me checkbox
         self.remember_me_checkbox = QCheckBox("Remember me")
         self.remember_me_checkbox.setStyleSheet("color: white;")
-        layout.addWidget(self.remember_me_checkbox)
+        fields_layout.addWidget(self.remember_me_checkbox, 0, Qt.AlignHCenter)
 
-        # "Or Register" link
+        # Register link
         self.register_link = QLabel("<a href='#'> or Register</a>")
         self.register_link.setStyleSheet("color: #0096FF;")
         self.register_link.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.register_link.setOpenExternalLinks(False)
         self.register_link.linkActivated.connect(self.show_register_mode)
-        layout.addWidget(self.register_link, alignment=Qt.AlignCenter)
+        fields_layout.addWidget(self.register_link, 0, Qt.AlignHCenter)
 
-        # Login button
-        login_btn = create_button("Login", BLUE_BUTTON_STYLE, size=(80, 30))
-        login_btn.clicked.connect(self.on_login_clicked)
-        layout.addWidget(login_btn, alignment=Qt.AlignRight)
+        layout.addLayout(fields_layout)
+        layout.addStretch()
+
+        # Bottom-right button
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        self.login_btn = create_button("Login", BLUE_BUTTON_STYLE, size=(80, 30))
+        self.login_btn.clicked.connect(self.on_login_clicked)
+        button_layout.addWidget(self.login_btn, 0, Qt.AlignRight)
+        layout.addLayout(button_layout)
 
     def init_register_ui(self):
-        """
-        Creates all widgets for the registration form.
-        """
-        self.register_widget = QWidget(self)
-        self.register_widget.setGeometry(0, 0, 400, 300)
+        '''
+        Initialize the register page UI
+        '''
+        reg_layout = QVBoxLayout(self.register_widget)
+        reg_layout.setContentsMargins(20, 20, 20, 20)
+        reg_layout.setSpacing(20)
 
-        layout = QVBoxLayout(self.register_widget)
-        layout.setSpacing(10)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(20, 20, 20, 20)
+        # Title top-center
+        title_label = QLabel("Register a new account.")
+        title_label.setStyleSheet("color: #C9D3D5; font-size: 25px;")
+        title_label.setAlignment(Qt.AlignHCenter)
+        reg_layout.addWidget(title_label, 0, Qt.AlignTop)
 
-        # Title
-        title_label = QLabel("Register a New Account")
-        title_label.setStyleSheet("color: white; font-size: 16px;")
-        title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_label)
+        # Stretch to push fields to the vertical middle
+        reg_layout.addStretch()
 
-        # Email
+        # Middle fields
+        fields_layout = QVBoxLayout()
+        fields_layout.setSpacing(15)
+        fields_layout.setAlignment(Qt.AlignHCenter)
+
+        # Email field
         self.email_input_register = QLineEdit()
         self.email_input_register.setPlaceholderText("Email")
-        self.email_input_register.setStyleSheet(self.custom_input_style())
-        layout.addWidget(self.email_input_register)
+        self.email_input_register.setStyleSheet(INPUT_FIELDS_STYLE)
+        self.email_input_register.setMaximumWidth(300)
 
-        # Password
+        # Pressing Enter triggers register
+        self.email_input_register.returnPressed.connect(self.on_register_clicked)
+        fields_layout.addWidget(self.email_input_register)
+
+        # Password field
         self.password_input_register = QLineEdit()
         self.password_input_register.setPlaceholderText("Password")
         self.password_input_register.setEchoMode(QLineEdit.Password)
-        self.password_input_register.setStyleSheet(self.custom_input_style())
-        layout.addWidget(self.password_input_register)
+        self.password_input_register.setStyleSheet(INPUT_FIELDS_STYLE)
+        self.password_input_register.setMaximumWidth(300)
+        self.password_input_register.returnPressed.connect(self.on_register_clicked)
+        fields_layout.addWidget(self.password_input_register)
 
-        # Confirm Password
+        # Confirm password field
         self.confirm_password_input = QLineEdit()
         self.confirm_password_input.setPlaceholderText("Confirm Password")
         self.confirm_password_input.setEchoMode(QLineEdit.Password)
-        self.confirm_password_input.setStyleSheet(self.custom_input_style())
-        layout.addWidget(self.confirm_password_input)
+        self.confirm_password_input.setStyleSheet(INPUT_FIELDS_STYLE)
+        self.confirm_password_input.setMaximumWidth(300)
+        self.confirm_password_input.returnPressed.connect(self.on_register_clicked)
+        fields_layout.addWidget(self.confirm_password_input)
 
-        # "Already have an account? Login"
+        # Login link
         self.login_link = QLabel("<a href='#'>Already have an account? Login</a>")
         self.login_link.setStyleSheet("color: #0096FF;")
         self.login_link.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.login_link.setOpenExternalLinks(False)
         self.login_link.linkActivated.connect(self.show_login_mode)
-        layout.addWidget(self.login_link, alignment=Qt.AlignCenter)
+        fields_layout.addWidget(self.login_link, 0, Qt.AlignHCenter)
 
-        # Register button
-        register_btn = create_button("Register", BLUE_BUTTON_STYLE, size=(80, 30))
-        register_btn.clicked.connect(self.on_register_clicked)
-        layout.addWidget(register_btn, alignment=Qt.AlignRight)
+        reg_layout.addLayout(fields_layout)
+
+        # Stretch to push button to the bottom
+        reg_layout.addStretch()
+
+        # Bottom-right button
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        self.register_btn = create_button("Register", BLUE_BUTTON_STYLE, size=(80, 30))
+        self.register_btn.clicked.connect(self.on_register_clicked)
+        button_layout.addWidget(self.register_btn, 0, Qt.AlignRight)
+        reg_layout.addLayout(button_layout)
 
     def show_login_mode(self):
         '''
-        Switch to the login mode
+        Load the login mode
         '''
         self.current_mode = "login"
         self.setup_login_mode()
 
     def show_register_mode(self):
         '''
-        Switch to the register mode
+        Load the register mode
         '''
         self.current_mode = "register"
         self.setup_login_mode()
@@ -170,13 +218,13 @@ class LoginView(QWidget):
             self.register_widget.show()
 
     def on_login_clicked(self):
-        '''
+        """
         Login button clicked. Validate and attempt login
-        '''
+        """
         email = self.email_input_login.text().strip()
         password = self.password_input_login.text().strip()
         if not email or not password:
-            self.toast.show_message("Please fill all fields.", "error")
+            self.toast.show_message("Please fill all fields", "error")
             return
 
         # Verify user
@@ -187,59 +235,36 @@ class LoginView(QWidget):
 
             # Emit success signal
             self.login_success.emit(email)
-
         else:
-            self.toast.show_message("Invalid email or password.", "error")
+            self.toast.show_message("Invalid email or password", "error")
 
     def on_register_clicked(self):
-        '''
+        """
         Register button clicked. Validate and attempt registration
-        '''
+        """
         email = self.email_input_register.text().strip()
         password = self.password_input_register.text().strip()
         confirm_password = self.confirm_password_input.text().strip()
 
         if not email or not password or not confirm_password:
-            self.toast.show_message("Please fill all fields.", "error")
+            self.toast.show_message("Please fill all fields", "error")
             return
 
-        # 1) Validate email format before continuing (see next section).
+        # Validate email format
         if not is_valid_email(email):
-            self.toast.show_message("Invalid email format!", "error")
+            self.toast.show_message("Invalid email format", "error")
             return
 
         if password != confirm_password:
-            self.toast.show_message("Passwords do not match!", "error")
+            self.toast.show_message("Passwords do not match", "error")
             return
 
         # Attempt registration
         success = register_user(email, password)
         if not success:
-            self.toast.show_message("User already exists!", "error")
+            self.toast.show_message("User already exists", "error")
         else:
-            self.toast.show_message("Registration successful! Please log in.", "info")
-
-            # Fill the login form’s email input with the newly registered email
+            self.toast.show_message("Registration successful! Please log in", "info")
             self.email_input_login.setText(email)
-
-            # Clear the login form’s password field to avoid any auto-fill
             self.password_input_login.setText("")
-
-            # Switch to login mode
-            self.show_login_mode()
-
-    def custom_input_style(self):
-        """
-        Custom style for input fields
-        """
-        # Base style
-        custom = """
-            QLineEdit {
-                background-color: #4B5D5C;
-                color: white;
-                border-radius: 10px;
-                padding: 8px;
-                margin: 5px 0;
-            }
-        """
-        return custom
+            self.show_login_mode()  # Switch to login mode
