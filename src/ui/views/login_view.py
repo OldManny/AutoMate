@@ -63,7 +63,7 @@ class LoginView(QWidget):
         layout.setSpacing(20)
 
         # Title top-center
-        welcome_label = QLabel("Welcome! Please log in.")
+        welcome_label = QLabel("Welcome to AutoMate")
         welcome_label.setStyleSheet("color: #C9D3D5; font-size: 25px;")
         welcome_label.setAlignment(Qt.AlignHCenter)
         layout.addWidget(welcome_label, 0, Qt.AlignTop)
@@ -130,7 +130,7 @@ class LoginView(QWidget):
         reg_layout.setSpacing(20)
 
         # Title top-center
-        title_label = QLabel("Register a new account.")
+        title_label = QLabel("Welcome to AutoMate")
         title_label.setStyleSheet("color: #C9D3D5; font-size: 25px;")
         title_label.setAlignment(Qt.AlignHCenter)
         reg_layout.addWidget(title_label, 0, Qt.AlignTop)

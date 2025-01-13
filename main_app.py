@@ -123,9 +123,9 @@ class MainApp(QMainWindow):
 
         # Navigation buttons
         nav_buttons = [
-            ("Files", 1, "assets/photos/file.png"),
-            ("Email", 2, "assets/photos/email.png"),
-            ("Data", 3, "assets/photos/data.png"),
+            ("Files", 1, "assets/icons/file.png"),
+            ("Email", 2, "assets/icons/email.png"),
+            ("Data", 3, "assets/icons/data.png"),
         ]
 
         for text, index, icon_path in nav_buttons:
@@ -140,15 +140,15 @@ class MainApp(QMainWindow):
         first_button.setChecked(True)
 
         layout.addStretch()
-        auto_btn = self.create_nav_button("Schedule", "assets/photos/schedule.png")
+        auto_btn = self.create_nav_button("Schedule", "assets/icons/schedule.png")
         auto_btn.clicked.connect(self.open_schedule_modal)
         layout.addWidget(auto_btn)
 
-        running_btn = self.create_nav_button("Running", "assets/photos/running.png")
+        running_btn = self.create_nav_button("Running", "assets/icons/running.png")
         running_btn.clicked.connect(self.open_running_modal)
         layout.addWidget(running_btn)
 
-        logout_btn = self.create_nav_button("Logout", "assets/photos/logout.png")
+        logout_btn = self.create_nav_button("Logout", "assets/icons/logout.png")
         logout_btn.clicked.connect(self.on_logout_clicked)
         layout.addWidget(logout_btn)
 

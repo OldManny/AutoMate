@@ -195,7 +195,7 @@ class RunningJobsModal(BaseModalWindow):
             label.setFixedWidth(self.COLUMN_WIDTHS[column_name])
             row_layout.addWidget(label)
 
-        cancel_btn = create_icon_button("assets/photos/cancel.png", icon_size=(11, 11), button_size=(13, 13))
+        cancel_btn = create_icon_button("assets/icons/cancel.png", icon_size=(11, 11), button_size=(13, 13))
         cancel_btn.clicked.connect(lambda _, j_id=job_id: self.on_cancel_job(j_id))
         cancel_btn.setFixedWidth(self.COLUMN_WIDTHS["Cancel"])
         row_layout.addWidget(cancel_btn)

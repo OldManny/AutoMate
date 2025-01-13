@@ -50,7 +50,7 @@ class FileOrganizerCustomizationDialog(QWidget):
 
         # Icon
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/photos/file_management.png")  # Icon by Uniconlabs
+        icon_pixmap = QPixmap("assets/icons/file_management.png")  # Icon by Uniconlabs
         icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)
@@ -81,7 +81,7 @@ class FileOrganizerCustomizationDialog(QWidget):
         folder_layout.addWidget(self.folder_input)
 
         self.folder_icon_btn = create_icon_button(
-            icon_path="assets/photos/folder.png",
+            icon_path="assets/icons/folder.png",
             icon_size=(29, 29),
             button_size=(30, 30),
         )
@@ -174,7 +174,7 @@ class FileOrganizerCustomizationDialog(QWidget):
 
                 # Create info icon button
                 info_button = create_icon_button(
-                    icon_path="assets/photos/info.png",
+                    icon_path="assets/icons/info.png",
                     icon_size=(16, 16),
                     button_size=(20, 20),
                 )
