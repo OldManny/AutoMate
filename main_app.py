@@ -110,7 +110,7 @@ class MainApp(QMainWindow):
         Creates the sidebar with navigation buttons and additional options.
         """
         sidebar = QWidget()
-        sidebar.setFixedWidth(150)
+        sidebar.setFixedWidth(151)
         sidebar.setStyleSheet(SIDEBAR_STYLE)
 
         layout = QVBoxLayout(sidebar)
@@ -148,6 +148,10 @@ class MainApp(QMainWindow):
         running_btn.clicked.connect(self.open_running_modal)
         layout.addWidget(running_btn)
 
+        logout_btn = self.create_nav_button("Logout", "assets/photos/logout.png")
+        logout_btn.clicked.connect(self.on_logout_clicked)
+        layout.addWidget(logout_btn)
+
         return sidebar
 
     def create_nav_button(self, text, icon_path):
@@ -158,7 +162,7 @@ class MainApp(QMainWindow):
         if os.path.exists(icon_path):
             icon = QIcon(icon_path)
             button.setIcon(icon)
-            button.setIconSize(QSize(27, 27))  # Icon size
+            button.setIconSize(QSize(29, 29))  # Icon size
             button.setFixedHeight(50)
             button.setText("  " + text)  # Add space for text alignment
         button.setStyleSheet(NAV_BUTTON_STYLE)
@@ -297,6 +301,27 @@ class MainApp(QMainWindow):
 
         # Switch to the "Files" page
         self.stacked_widget.setCurrentIndex(1)
+
+    def on_logout_clicked(self):
+        """
+        Logs the user out, clears any stored token, and shows the login page again.
+        """
+
+        # Clear the remember-me token file if it exists
+        if os.path.exists("last_token.txt"):
+            os.remove("last_token.txt")
+
+        # Clear all login fields and checkboxes
+        self.login_view.email_input_login.setText("")
+        self.login_view.password_input_login.setText("")
+        self.login_view.remember_me_checkbox.setChecked(False)
+
+        # Mark as logged out
+        self.logged_in = False
+        self.sidebar.setVisible(False)
+
+        # Switch to login page
+        self.stacked_widget.setCurrentIndex(0)
 
 
 if __name__ == "__main__":
