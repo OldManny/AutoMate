@@ -21,7 +21,7 @@ from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
 from src.ui.views.file_organizer_view import FileOrganizerCustomizationDialog
 from src.ui.views.login_view import LoginView
-from src.utils.auth import get_user_by_token, load_user_data
+from src.utils.auth import get_user_by_token, load_user_data, save_user_data
 
 
 class MainApp(QMainWindow):
@@ -267,6 +267,7 @@ class MainApp(QMainWindow):
 
         if token:
             user_email = get_user_by_token(token)
+            self.current_user = user_email
             if user_email:
                 # Valid user => set self.logged_in and show the "Files" page
                 self.logged_in = True
@@ -278,6 +279,7 @@ class MainApp(QMainWindow):
         self.logged_in = False
         self.sidebar.setVisible(False)
         self.stacked_widget.setCurrentIndex(0)
+        self.current_user = ""  # no one is logged in yet
 
     def on_login_success(self, email):
         """
@@ -295,6 +297,9 @@ class MainApp(QMainWindow):
             with open("last_token.txt", "w") as f:
                 f.write(token)
 
+        # Store this user as the current user
+        self.current_user = email
+
         # Mark logged_in = True and show sidebar
         self.logged_in = True
         self.sidebar.setVisible(True)
@@ -311,6 +316,15 @@ class MainApp(QMainWindow):
         if os.path.exists("last_token.txt"):
             os.remove("last_token.txt")
 
+        # Clear the token in user_data.json
+        if hasattr(self, "current_user") and self.current_user:
+            data = load_user_data()
+            for user in data["users"]:
+                if user["email"].lower() == self.current_user.lower():
+                    user["remember_me_token"] = ""
+                    break
+            save_user_data(data)
+
         # Clear all login fields and checkboxes
         self.login_view.email_input_login.setText("")
         self.login_view.password_input_login.setText("")
@@ -319,6 +333,9 @@ class MainApp(QMainWindow):
         # Mark as logged out
         self.logged_in = False
         self.sidebar.setVisible(False)
+
+        # Reset current_user
+        self.current_user = ""
 
         # Switch to login page
         self.stacked_widget.setCurrentIndex(0)
