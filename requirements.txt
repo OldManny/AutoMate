@@ -1,6 +1,7 @@
 PyQt5
 bcrypt
 pytest
+watchdog
 pytest-mock
 setuptools
 APScheduler
