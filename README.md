@@ -159,7 +159,7 @@ The Undo button in the File and Data dialogs will revert the last performed acti
 
 ## Testing
 
-To run tests for the Files and Authentication module (others are in progress):
+To run tests for the Files, Authentication and Scheduler modules (others are in progress):
 
 1. Navigate to the project root directory.
 2. Execute:
