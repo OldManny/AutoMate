@@ -190,7 +190,6 @@ TOOLTIP_STYLE = """
     padding: 2px;
 """
 
-
 ####### Login/Register input fields Style #######
 
 INPUT_FIELDS_STYLE = """
@@ -201,4 +200,17 @@ INPUT_FIELDS_STYLE = """
         padding: 8px;
         margin: 5px 0;
     }
+"""
+
+####### Email Input Area Style #######
+
+EMAIL_INPUT_STYLE = """
+QLineEdit, QTextEdit {
+    background-color: #333;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    padding: 5px;
+    font-size: 12px; /* Override the global 13px with 12px */
+}
 """

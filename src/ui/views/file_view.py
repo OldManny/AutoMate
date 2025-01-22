@@ -26,7 +26,7 @@ from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
 
 
-class FileOrganizerCustomizationDialog(QWidget):
+class FileView(QWidget):
     def __init__(self, parent=None, scheduler_manager=None):
         super().__init__(parent)
         self.scheduler_manager = scheduler_manager
@@ -50,7 +50,7 @@ class FileOrganizerCustomizationDialog(QWidget):
 
         # Icon
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/file_management.png")  # Icon by Uniconlabs
+        icon_pixmap = QPixmap("assets/icons/file.png")  # Icon by Uniconlabs
         icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)

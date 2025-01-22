@@ -19,7 +19,8 @@ from PyQt5.QtWidgets import (
 from daemon import SchedulerManager
 from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
-from src.ui.views.file_organizer_view import FileOrganizerCustomizationDialog
+from src.ui.views.email_view import EmailView
+from src.ui.views.file_view import FileView
 from src.ui.views.login_view import LoginView
 from src.utils.auth import get_user_by_token, load_user_data, save_user_data
 
@@ -211,8 +212,8 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Pass the shared scheduler_manager to FileOrganizerCustomizationDialog
-        file_organizer = FileOrganizerCustomizationDialog(parent=self, scheduler_manager=self.scheduler_manager)
+        # Pass the shared scheduler_manager to FileView
+        file_organizer = FileView(parent=self, scheduler_manager=self.scheduler_manager)
         file_organizer.setObjectName("FileOrganizerWidget")
         layout.addWidget(file_organizer)
 
@@ -225,14 +226,16 @@ class MainApp(QMainWindow):
 
     def create_email_page(self):
         """
-        Creates a placeholder page for the email module.
+        Creates the email page with the new EmailView widget.
         """
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        label = QLabel("Email Sender Module")
-        label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
-        return page
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        email_view = EmailView(parent=self)
+        layout.addWidget(email_view)
+
+        return container
 
     def create_data_entry_page(self):
         """
