@@ -113,6 +113,10 @@ Use **Undo** to revert your last operation, and **Run** to execute your chosen t
 
 ### Email
 
+<p align="center">
+  <img src="images/Emails.png" alt="Emails Dialog" />
+</p>
+
 **Under Development**: Sending emails and scheduling future deliveries.
 
 
@@ -175,5 +179,4 @@ Future tests for **Email** and **Data** modules are under development.
 
 - Icons from [Freepik](https://www.freepik.com/):
     - [Favourite folder icon](https://www.freepik.com/icon/favourite-folder_11471618#fromView=search&page=1&position=42&uuid=622cae6d-d6fe-404e-b11b-ecc936850666) by [juicy_fish](https://www.freepik.com/author/juicy-fish/icons)
-    - [Folder icon](https://www.freepik.com/icon/folder_5656334#fromView=search&page=2&position=44&uuid=cdb3aadb-5903-44e2-9587-04d09fab2e19) by [Uniconlabs](https://www.freepik.com/author/batitok/icons)
     - [Cancel icon](https://www.freepik.com/icon/cancel_8532367) by [Muhammad Waqas Khan](https://www.freepik.com/author/muhammad-waqas-khan/icons)
