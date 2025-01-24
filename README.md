@@ -114,7 +114,7 @@ Use **Undo** to revert your last operation, and **Run** to execute your chosen t
 ### Email
 
 <p align="center">
-  <img src="images/Emails.png" alt="Emails Dialog" />
+  <img src="images/Email.png" alt="Email Dialog" />
 </p>
 
 **Under Development**: Sending emails and scheduling future deliveries.

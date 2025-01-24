@@ -210,7 +210,7 @@ QLineEdit, QTextEdit {
     border-radius: 5px;
     color: white;
     border: none;
-    padding: 5px;
+    padding: 1px 5px;
     font-size: 12px; /* Override the global 13px with 12px */
 }
 """
