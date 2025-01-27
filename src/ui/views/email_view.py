@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QTextEdit, QVBoxLayout, QWidget
 
+from src.automation.email_sender import send_email_via_mailgun
 from src.ui.components.components import create_button, create_card, create_separator
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
 
@@ -108,8 +109,25 @@ class EmailView(QWidget):
         return line_edit
 
     def on_send_clicked(self):
-        """
-        Handle the send button click event.
-        Currently a placeholder for further implementation.
-        """
-        print("Send clicked - to be implemented.")
+        to_field = self.to_input.text()
+        cc_field = self.cc_input.text()
+        subj_field = self.subj_input.text()
+        from_field = self.from_input.text()
+        body_text = self.body_edit.toPlainText()
+
+        # Convert comma-separated fields to lists
+        to_list = [addr.strip() for addr in to_field.split(',')] if to_field else []
+        cc_list = [addr.strip() for addr in cc_field.split(',')] if cc_field else []
+
+        try:
+            send_email_via_mailgun(
+                from_address=from_field,
+                to_addresses=to_list,
+                subject=subj_field,
+                body_text=body_text,
+                cc_addresses=cc_list,
+            )
+            print("Email sent successfully!")
+            # You could show a small notification/toast here
+        except Exception as e:
+            print(f"Failed to send email: {e}")

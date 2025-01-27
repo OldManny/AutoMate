@@ -5,3 +5,4 @@ watchdog
 pytest-mock
 setuptools
 APScheduler
+requests
