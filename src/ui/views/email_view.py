@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QTextEd
 
 from src.automation.email_sender import send_email_via_mailgun
 from src.ui.components.components import create_button, create_card, create_separator
+from src.ui.components.toast_notification import ToastNotification
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
 
 
@@ -18,6 +19,9 @@ class EmailView(QWidget):
 
         # Apply the global style for email fields
         self.setStyleSheet(EMAIL_INPUT_STYLE)
+
+        # Create the toast notification instance here:
+        self.toast = ToastNotification(self)
 
         # Main layout configuration
         main_layout = QVBoxLayout(self)
@@ -109,17 +113,27 @@ class EmailView(QWidget):
         return line_edit
 
     def on_send_clicked(self):
-        to_field = self.to_input.text()
-        cc_field = self.cc_input.text()
-        subj_field = self.subj_input.text()
-        from_field = self.from_input.text()
-        body_text = self.body_edit.toPlainText()
+        """
+        When user clicks Send, gather input fields,
+        call our backend mail function, then show toast and clear on success.
+        """
+        to_field = self.to_input.text().strip()
+        cc_field = self.cc_input.text().strip()
+        subj_field = self.subj_input.text().strip()
+        from_field = self.from_input.text().strip()
+        body_text = self.body_edit.toPlainText().strip()
 
-        # Convert comma-separated fields to lists
-        to_list = [addr.strip() for addr in to_field.split(',')] if to_field else []
-        cc_list = [addr.strip() for addr in cc_field.split(',')] if cc_field else []
+        # Quick check
+        if not to_field or not from_field:
+            self.toast.show_message("Please specify 'To' and 'From'", "info")
+            return
+
+        # Comma-separated -> list
+        to_list = [addr for addr in to_field.split(',') if addr]
+        cc_list = [addr for addr in cc_field.split(',') if addr]
 
         try:
+            # Call the backend function
             send_email_via_mailgun(
                 from_address=from_field,
                 to_addresses=to_list,
@@ -127,7 +141,14 @@ class EmailView(QWidget):
                 body_text=body_text,
                 cc_addresses=cc_list,
             )
-            print("Email sent successfully!")
-            # You could show a small notification/toast here
+            # Show success & clear fields
+            self.toast.show_message("Email sent", "success")
+            self.to_input.clear()
+            self.cc_input.clear()
+            self.subj_input.clear()
+            self.from_input.clear()
+            self.body_edit.clear()
+
         except Exception as e:
             print(f"Failed to send email: {e}")
+            self.toast.show_message("Failed to send email", "error")
