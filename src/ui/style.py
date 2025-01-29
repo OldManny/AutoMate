@@ -63,14 +63,14 @@ QTextEdit {
 CARD_STYLE = """
 QWidget[class="card"] {
     background-color: #333333;
-    border: 1px solid #4f4f4f;
-    border-radius: 8px;
+
+    border-radius: 11px;
     margin: 1px 0px;
     padding: 8px 8px;
     color: white;
 }
 QCheckBox {
-    color: white;
+    color: #C9D3D5;
 }
 """
 

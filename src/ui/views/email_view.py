@@ -28,7 +28,7 @@ class EmailView(QWidget):
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # ========== Header Section ==========
+        # Header Section
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -56,8 +56,8 @@ class EmailView(QWidget):
         main_layout.addWidget(header_widget)
         main_layout.addWidget(create_separator())
 
-        # ========== Input Fields Section ==========
-        fields_card_widgets = []  # Store all field widgets
+        # Store all field widgets in a list
+        fields_card_widgets = []
 
         # 'To' field
         self.to_input = self.create_small_line_edit("To")
@@ -81,7 +81,7 @@ class EmailView(QWidget):
 
         # Email body (multiline input)
         self.body_edit = QTextEdit()
-        self.body_edit.setPlaceholderText("Body")
+        self.body_edit.setPlaceholderText("Write your email here...")
         fields_card_widgets.append(self.body_edit)
 
         # Group all fields into a card
@@ -92,7 +92,7 @@ class EmailView(QWidget):
         )
         main_layout.addWidget(fields_card)
 
-        # ========== Bottom Send Button ==========
+        # Bottom Send Button
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         self.send_btn = create_button("Send", BLUE_BUTTON_STYLE)
@@ -125,7 +125,7 @@ class EmailView(QWidget):
 
         # Quick check
         if not to_field or not from_field:
-            self.toast.show_message("Please specify 'To' and 'From'", "info")
+            self.toast.show_message("Specify 'To' and 'From'", "info")
             return
 
         # Comma-separated -> list
