@@ -214,3 +214,18 @@ QLineEdit, QTextEdit {
     font-size: 12px; /* Override the global 13px with 12px */
 }
 """
+
+####### Attachments Remove Button Style #######
+
+DELETE_BUTTON_STYLE = """
+QPushButton {
+    background-color: transparent;
+    border: none;
+    color: #9CA3AF;
+    font-size: 14px;
+    padding: 0;
+}
+QPushButton:hover {
+    color: #EF4444;
+}
+"""

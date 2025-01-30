@@ -1,34 +1,35 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QTextEdit, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.email_sender import send_email_via_mailgun
 from src.ui.components.components import create_button, create_card, create_separator
+from src.ui.components.email_body import BodyWidget
 from src.ui.components.toast_notification import ToastNotification
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
 
 
 class EmailView(QWidget):
     """
-    A UI component for composing and sending emails,
-    with fields for 'To', 'Cc', 'Subject', 'From', and a message body.
+    Email editor with To, Cc, Subject, From, plus a BodyWidget
+    for text & attachments. The 'Send' button calls Mailgun.
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Apply the global style for email fields
+        # Global style for input fields
         self.setStyleSheet(EMAIL_INPUT_STYLE)
 
-        # Create the toast notification instance here:
+        # Toast notification instance
         self.toast = ToastNotification(self)
 
-        # Main layout configuration
+        # Main layout for the entire widget
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header Section
+        # Header
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -37,7 +38,7 @@ class EmailView(QWidget):
         # Email icon for the header
         icon_label = QLabel()
         icon_pixmap = QPixmap("assets/icons/email.png")
-        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)  # Scale smoothly
+        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
@@ -49,97 +50,85 @@ class EmailView(QWidget):
         desc_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         desc_label.setStyleSheet("color: #C9D3D5; font-size: 12px;")
 
-        # Add the icon and text to the header
+        # Add the icon and text
         header_layout.addWidget(icon_label)
         header_layout.addWidget(desc_label)
-
         main_layout.addWidget(header_widget)
         main_layout.addWidget(create_separator())
 
         # Store all field widgets in a list
         fields_card_widgets = []
 
-        # 'To' field
-        self.to_input = self.create_small_line_edit("To")
+        # Single-line fields
+        self.to_input = self._create_line_edit("To")
         fields_card_widgets.append(self.to_input)
-        fields_card_widgets.append(create_separator())  # Separator after each field
+        fields_card_widgets.append(create_separator())
 
-        # 'Cc' field
-        self.cc_input = self.create_small_line_edit("Cc")
+        self.cc_input = self._create_line_edit("Cc")
         fields_card_widgets.append(self.cc_input)
         fields_card_widgets.append(create_separator())
 
-        # 'Subject' field
-        self.subj_input = self.create_small_line_edit("Subject")
+        self.subj_input = self._create_line_edit("Subject")
         fields_card_widgets.append(self.subj_input)
         fields_card_widgets.append(create_separator())
 
-        # 'From' field
-        self.from_input = self.create_small_line_edit("From")
+        self.from_input = self._create_line_edit("From")
         fields_card_widgets.append(self.from_input)
         fields_card_widgets.append(create_separator())
 
-        # Email body (multiline input)
-        self.body_edit = QTextEdit()
-        self.body_edit.setPlaceholderText("Write your email here...")
-        fields_card_widgets.append(self.body_edit)
+        # BodyWidget for text + attachments
+        self.body_widget = BodyWidget()
+        fields_card_widgets.append(self.body_widget)
 
         # Group all fields into a card
-        fields_card = create_card(
-            content_widgets=fields_card_widgets,
-            margins=(8, 5, 8, 5),  # Margins for the card
-            spacing=0,  # Minimal spacing between elements
-        )
+        fields_card = create_card(content_widgets=fields_card_widgets, margins=(8, 5, 8, 5), spacing=0)
         main_layout.addWidget(fields_card)
 
-        # Bottom Send Button
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
+        # Send button
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
         self.send_btn = create_button("Send", BLUE_BUTTON_STYLE)
         self.send_btn.clicked.connect(self.on_send_clicked)
-        button_layout.addWidget(self.send_btn)
-        main_layout.addLayout(button_layout)
+        btn_layout.addWidget(self.send_btn)
+        main_layout.addLayout(btn_layout)
 
-    def create_small_line_edit(self, placeholder_text):
-        """
-        Creates a single-line text input with a placeholder.
+        self.setLayout(main_layout)
 
-        Parameters:
-        - placeholder_text: Text to guide the user inside the input field.
-        """
+    def _create_line_edit(self, placeholder):
+        """Creates a single-line text input with a placeholder."""
         line_edit = QLineEdit()
-        line_edit.setPlaceholderText(placeholder_text)
-        line_edit.setFixedHeight(21)  # Restrict height to avoid stretching
+        line_edit.setPlaceholderText(placeholder)
+        line_edit.setFixedHeight(21)
         return line_edit
 
     def on_send_clicked(self):
-        """
-        When user clicks Send, gather input fields,
-        call our backend mail function, then show toast and clear on success.
-        """
-        to_field = self.to_input.text().strip()
-        cc_field = self.cc_input.text().strip()
-        subj_field = self.subj_input.text().strip()
-        from_field = self.from_input.text().strip()
-        body_text = self.body_edit.toPlainText().strip()
+        """Collect fields, send via mailgun, and clear on success."""
+        to_text = self.to_input.text().strip()
+        cc_text = self.cc_input.text().strip()
+        subj_text = self.subj_input.text().strip()
+        from_text = self.from_input.text().strip()
 
-        # Quick check
-        if not to_field or not from_field:
+        body_text = self.body_widget.get_body_text()
+        attachments = self.body_widget.attachments
+
+        # Validate fields
+        if not to_text or not from_text:
             self.toast.show_message("Specify 'To' and 'From'", "info")
             return
 
-        # Comma-separated -> list
-        to_list = [addr for addr in to_field.split(',') if addr]
-        cc_list = [addr for addr in cc_field.split(',') if addr]
+        # Split comma-separated emails into a list
+        to_list = [x for x in to_text.split(',') if x.strip()]
+        cc_list = [x for x in cc_text.split(',') if x.strip()]
 
         try:
             # Call the backend function
             send_email_via_mailgun(
-                from_address=from_field,
+                from_address=from_text,
                 to_addresses=to_list,
-                subject=subj_field,
+                subject=subj_text,
                 body_text=body_text,
                 cc_addresses=cc_list,
+                attachments=attachments,
             )
             # Show success & clear fields
             self.toast.show_message("Email sent", "success")
@@ -147,8 +136,8 @@ class EmailView(QWidget):
             self.cc_input.clear()
             self.subj_input.clear()
             self.from_input.clear()
-            self.body_edit.clear()
+            self.body_widget.clear_body()
 
         except Exception as e:
-            print(f"Failed to send email: {e}")
-            self.toast.show_message("Failed to send email", "error")
+            print("Failed to send email:", e)
+            self.toast.show_message(f"Failed to send: {e}", "error")
