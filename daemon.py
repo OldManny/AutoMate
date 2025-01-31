@@ -12,7 +12,7 @@ from apscheduler.triggers.date import DateTrigger
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-# Import backend tasks for scheduling
+from src.automation.email_sender import send_email_via_mailgun
 from src.automation.file_organizer import (
     backup_files,
     compress_files,
@@ -32,6 +32,7 @@ TASK_FUNCTIONS = {
     "rename_files": rename_files,
     "compress_files": compress_files,
     "backup_files": backup_files,
+    "send_email": send_email_via_mailgun,
 }
 
 # User-friendly task labels
@@ -43,6 +44,7 @@ TASK_LABELS = {
     "rename_files": "Rename Files",
     "compress_files": "Compress Files",
     "backup_files": "Backup Files",
+    "send_email": "Send Email",
 }
 
 # Create a logger object
@@ -169,7 +171,9 @@ class SchedulerManager:
         except Exception as e:
             logger.error(f"Error removing job {job_id} from JSON: {e}")
 
-    def add_scheduled_job(self, task_type, folder_target, run_time, recurring_days=None, job_id=None):
+    def add_scheduled_job(
+        self, task_type, folder_target, run_time, recurring_days=None, job_id=None, email_params=None
+    ):
         """
         Schedule a new job in APScheduler.
         Supports both recurring and one-time jobs.
@@ -184,6 +188,7 @@ class SchedulerManager:
             "folder_target": folder_target,
             "run_time": run_time,
             "recurring_days": recurring_days or [],
+            "email_params": email_params or {},
         }
         self._schedule_job(job_data, persist=True)
         return job_id
@@ -197,6 +202,7 @@ class SchedulerManager:
         folder_target = job_data["folder_target"]
         run_time = job_data["run_time"]
         recurring_days = job_data.get("recurring_days", [])
+        email_params = job_data.get("email_params", {})
 
         hour, minute = map(int, run_time.split(":"))
         now = datetime.now()
@@ -238,18 +244,37 @@ class SchedulerManager:
             return
 
         # Add the job to the scheduler
-        self.scheduler.add_job(
-            func=task_callable,
-            trigger=trigger,
-            id=job_id,
-            kwargs={
-                "source_directory": folder_target,
-                "task_type": task_type,
-                "recurring_days": recurring_days,
-            },
-            replace_existing=True,
-        )
+        if task_type == "send_email":
+            # Pass all the needed fields into kwargs for send_email_via_mailgun
+            self.scheduler.add_job(
+                func=task_callable,
+                trigger=trigger,
+                id=job_id,
+                kwargs={
+                    "from_address": email_params.get("from_address"),
+                    "to_addresses": email_params.get("to_addresses"),
+                    "subject": email_params.get("subject"),
+                    "body_text": email_params.get("body_text"),
+                    "cc_addresses": email_params.get("cc_addresses"),
+                    "attachments": email_params.get("attachments"),
+                },
+                replace_existing=True,
+            )
+        else:
+            # Pass the source directory and task type
+            self.scheduler.add_job(
+                func=task_callable,
+                trigger=trigger,
+                id=job_id,
+                kwargs={
+                    "source_directory": folder_target,
+                    "task_type": task_type,
+                    "recurring_days": recurring_days,
+                },
+                replace_existing=True,
+            )
 
+        # Persist the job data if requested
         if persist:
             self._write_job_to_file(job_data)
 
@@ -264,7 +289,7 @@ class SchedulerManager:
             else:
                 job_list = []
 
-            # Remove old entry for the same job ID and add the new one
+            # Remove old entry for the same job_id and add the new one
             job_list = [j for j in job_list if j["job_id"] != job_data["job_id"]]
             job_list.append(job_data)
 
@@ -312,7 +337,7 @@ class SchedulerManager:
         # Convert file job list to a dict for quick lookup
         file_jobs_dict = {j["job_id"]: j for j in file_jobs if "job_id" in j}
 
-        # Remove any APScheduler jobs that aren't in file
+        # Remove any APScheduler jobs that aren't in the file
         all_current_jobs = self.scheduler.get_jobs()
         removed_jobs_count = 0
         for job in all_current_jobs:
@@ -324,7 +349,7 @@ class SchedulerManager:
                 except Exception:
                     logger.exception(f"Failed to remove job {job.id}.")
 
-        # Re-schedule or add any job from file
+        # Re-schedule or add each job from file
         for job_data in file_jobs:
             self._schedule_job(job_data, persist=False)
 

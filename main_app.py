@@ -183,16 +183,25 @@ class MainApp(QMainWindow):
 
     def open_schedule_modal(self):
         """
-        Opens the scheduling modal for automation, but only if logged in.
+        Opens the scheduling modal for both File and Email views.
         """
         if not self.logged_in:
             self.stacked_widget.setCurrentIndex(0)
             return
+
         current_widget = self.stacked_widget.currentWidget()
         if isinstance(current_widget, QWidget):
+            # Check if in the File View
             file_organizer = current_widget.findChild(QWidget, "FileOrganizerWidget")
             if file_organizer:
                 file_organizer.open_schedule_modal()
+                return
+
+            # Check if in the Email View
+            email_view = current_widget.findChild(QWidget, "EmailView")
+            if email_view:
+                email_view.open_schedule_modal()
+                return
 
     def open_running_modal(self):
         """
@@ -232,7 +241,9 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        email_view = EmailView(parent=self)
+        # Pass the shared scheduler_manager to EmailView
+        email_view = EmailView(parent=self, scheduler_manager=self.scheduler_manager)
+        email_view.setObjectName("EmailView")
         layout.addWidget(email_view)
 
         return container
