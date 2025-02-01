@@ -183,11 +183,16 @@ class RunningJobsModal(BaseModalWindow):
 
         friendly_type = TASK_LABELS.get(task_type, task_type)
 
+        # Display email recipients for email jobs, folder path for file jobs
+        display_target = folder_target
+        if task_type == "send_email":
+            display_target = folder_target or "No recipients"
+
         row_layout = QHBoxLayout()
         row_layout.setContentsMargins(5, 0, 5, 0)
         row_layout.setSpacing(5)
 
-        row_data = {"Type": friendly_type, "Target": folder_target, "Time": next_run, "Days": recurring_days}
+        row_data = {"Type": friendly_type, "Target": display_target, "Time": next_run, "Days": recurring_days}
 
         for column_name, text in row_data.items():
             label = ElidedLabel(text, max_width=self.COLUMN_WIDTHS[column_name], font_size=self.font_size)

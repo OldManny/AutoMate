@@ -195,7 +195,7 @@ class SchedulerManager:
 
     def _schedule_job(self, job_data, persist=True):
         """
-        Add a job to APScheduler and optionally save it to the JSON file.
+        Add a job to APScheduler and save it to the JSON file.
         """
         job_id = job_data["job_id"]
         task_type = job_data["task_type"]
@@ -210,12 +210,15 @@ class SchedulerManager:
         friendly_task_name = TASK_LABELS.get(task_type, task_type)
         logger.debug(f"Scheduling job {job_id}: {friendly_task_name} for {run_time} (persist={persist})")
 
-        # Store recurrence info
-        self.job_metadata[job_id] = {"recurring_days": recurring_days}
+        # Store metadata
+        self.job_metadata[job_id] = {
+            "recurring_days": recurring_days,
+            "task_type": task_type,
+            "folder_target": folder_target,
+        }
 
         # Determine the appropriate trigger for the job
         if recurring_days:
-            # Convert days to APScheduler's day_of_week format
             day_map = {
                 "Monday": "mon",
                 "Tuesday": "tue",
@@ -245,7 +248,7 @@ class SchedulerManager:
 
         # Add the job to the scheduler
         if task_type == "send_email":
-            # Pass all the needed fields into kwargs for send_email_via_mailgun
+            # Pass email-specific parameters
             self.scheduler.add_job(
                 func=task_callable,
                 trigger=trigger,
@@ -261,16 +264,12 @@ class SchedulerManager:
                 replace_existing=True,
             )
         else:
-            # Pass the source directory and task type
+            # Pass file-task specific parameters
             self.scheduler.add_job(
                 func=task_callable,
                 trigger=trigger,
                 id=job_id,
-                kwargs={
-                    "source_directory": folder_target,
-                    "task_type": task_type,
-                    "recurring_days": recurring_days,
-                },
+                kwargs={"source_directory": folder_target},
                 replace_existing=True,
             )
 
@@ -305,16 +304,30 @@ class SchedulerManager:
         """
         jobs_data = []
         for job in self.scheduler.get_jobs():
+            # Get metadata for the job
+            metadata = self.job_metadata.get(job.id, {})
+            task_type = metadata.get("task_type")
+
+            # Determine the target based on job type
+            if task_type == "send_email":
+                # For email jobs, get recipients from the job kwargs
+                to_addresses = job.kwargs.get("to_addresses", [])
+                target = ", ".join(to_addresses) if to_addresses else "-"
+            else:
+                # For file jobs, get the source directory
+                target = metadata.get("folder_target") or job.kwargs.get("source_directory", "-")
+
             jobs_data.append(
                 {
                     "job_id": job.id,
-                    "task_type": job.kwargs.get("task_type"),
-                    "folder_target": job.kwargs.get("source_directory"),
+                    "task_type": task_type,
+                    "folder_target": target,
                     "trigger": str(job.trigger),
                     "next_run_time": str(job.next_run_time) if job.next_run_time else None,
-                    "recurring_days": job.kwargs.get("recurring_days", []),
+                    "recurring_days": metadata.get("recurring_days", []),
                 }
             )
+
         logger.info(f"Listing {len(jobs_data)} active jobs.")
         return jobs_data
 

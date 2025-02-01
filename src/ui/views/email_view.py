@@ -205,7 +205,7 @@ class EmailView(QWidget):
 
     def on_schedule_canceled(self):
         """Handles the schedule canceled signal."""
-        self.toast.show_message("Email scheduling canceled", "info")
+        self.toast.show_message("Scheduling canceled", "info")
 
     def center_modal(self, modal):
         """Centers the modal relative to the main window."""
