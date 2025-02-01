@@ -1,5 +1,5 @@
 import atexit
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import logging
 import os
@@ -236,7 +236,7 @@ class SchedulerManager:
             schedule_today = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if schedule_today <= now:
                 # If it's past today's HH:MM, schedule for tomorrow
-                schedule_today = schedule_today.replace(day=schedule_today.day + 1)
+                schedule_today += timedelta(days=1)
             trigger = DateTrigger(run_date=schedule_today)
             logger.info(f"One-time job {job_id} scheduled for {schedule_today}.")
 

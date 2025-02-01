@@ -70,7 +70,7 @@ QWidget[class="card"] {
     color: white;
 }
 QCheckBox {
-    color: #C9D3D5;
+    color: white;
 }
 """
 
