@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 import json
 import logging
 import os
+import threading
 import time
 
-from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_MISSED
+from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
@@ -110,18 +112,59 @@ class SchedulerManager:
 
     def __init__(self, jobs_file: str = "scheduled_jobs.json"):
         self.jobs_file = jobs_file
-        self.scheduler = BackgroundScheduler()
         self.job_metadata = {}
 
-        # Listen for job execution & errors
-        self.scheduler.add_listener(self._job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        # Set up the APScheduler instance
+        executors = {
+            'default': ThreadPoolExecutor(10),
+            'processpool': ProcessPoolExecutor(3),
+        }
 
-        # Start scheduler
+        # Coalesce ensures that only one instance of a job runs at a time
+        job_defaults = {
+            'coalesce': True,
+            'misfire_grace_time': 300,
+        }
+
+        # Create the scheduler
+        self.scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
+        self.scheduler.add_listener(self._job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED)
+
+        # Start the scheduler
         self.scheduler.start()
-        logger.info("Scheduler started.")
+        logger.info("Scheduler started with coalesce=True and misfire_grace_time=300.")
 
-        # Load existing jobs from JSON
+        # Load existing jobs
         self.load_jobs_from_file()
+
+        # Start a background thread to detect wake-ups
+        wake_thread = threading.Thread(target=self._detect_wake_up, daemon=True)
+        wake_thread.start()
+
+    def _detect_wake_up(self):
+        """
+        Detects if the system has resumed from sleep and forces APScheduler to refresh.
+        """
+        last_time = time.time()
+
+        while True:
+            time.sleep(1)
+            current_time = time.time()
+
+            # If the time jumped forward significantly, assume wake-up
+            if current_time - last_time > 10:  # If the system was "frozen" for 10+ sec
+                logger.warning("System wake-up detected! Refreshing APScheduler without shutdown.")
+
+                # Pause scheduling temporarily
+                self.scheduler.pause()
+
+                # Reload jobs to make sure they are still scheduled
+                self.load_jobs_from_file()
+
+                # Resume scheduling
+                self.scheduler.resume()
+
+            last_time = current_time
 
     def _job_listener(self, event):
         """
@@ -130,11 +173,20 @@ class SchedulerManager:
         """
         if event.code == EVENT_JOB_ERROR:
             logger.error(f"Job {event.job_id} raised an error during execution.")
-            return  # Skip error handling for now
 
-        job_data = self._get_job_from_file(event.job_id)
-        if job_data and not job_data.get('recurring_days', []):  # Only clean up non-recurring jobs
-            self._cleanup_json_file(event.job_id)
+        elif event.code == EVENT_JOB_MISSED:
+            logger.warning(f"Job {event.job_id} was missed.")
+            # OPTIONAL: Implement rescheduling the job or notify via email
+
+        elif event.code == EVENT_JOB_EXECUTED:
+            job_data = self._get_job_from_file(event.job_id)
+            # Only clean up non-recurring jobs
+            if job_data and not job_data.get('recurring_days', []):
+                self._cleanup_json_file(event.job_id)
+                logger.info(f"One-time job {event.job_id} has been executed and removed from JSON.")
+
+        else:
+            logger.debug(f"Unhandled event code: {event.code} for job {event.job_id}")
 
     def _get_job_from_file(self, job_id):
         """
