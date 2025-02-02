@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
 
-from daemon import TASK_LABELS
+from src.automation.scheduler.job_handler import TASK_LABELS
 from src.ui.components.components import create_button, create_icon_button, create_separator
 from src.ui.components.elided_label import ElidedLabel
 from src.ui.modals.base_modal import BaseModalWindow

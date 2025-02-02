@@ -3,7 +3,7 @@ import json
 from apscheduler.schedulers.base import SchedulerNotRunningError
 import pytest
 
-from daemon import SchedulerManager
+from src.automation.scheduler.scheduler_manager import SchedulerManager
 
 
 @pytest.fixture
