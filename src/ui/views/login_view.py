@@ -103,8 +103,9 @@ class LoginView(QWidget):
         fields_layout.addWidget(self.remember_me_checkbox, 0, Qt.AlignHCenter)
 
         # Register link
-        self.register_link = QLabel("<a href='#'> or Register</a>")
-        self.register_link.setStyleSheet("color: #0096FF;")
+        self.register_link = QLabel()
+        self.register_link.setTextFormat(Qt.RichText)
+        self.register_link.setText("<a href='#' style='color: #27A6FF; text-decoration: none;'>or Register</a>")
         self.register_link.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.register_link.setOpenExternalLinks(False)
         self.register_link.linkActivated.connect(self.show_register_mode)
@@ -172,8 +173,11 @@ class LoginView(QWidget):
         fields_layout.addWidget(self.confirm_password_input)
 
         # Login link
-        self.login_link = QLabel("<a href='#'>Already have an account? Login</a>")
-        self.login_link.setStyleSheet("color: #0096FF;")
+        self.login_link = QLabel()
+        self.register_link.setTextFormat(Qt.RichText)
+        self.login_link.setText(
+            "<a href='#' style='color: #27A6FF; text-decoration: none;'>Already have an account? Login</a>"
+        )
         self.login_link.setTextInteractionFlags(Qt.TextBrowserInteraction)
         self.login_link.setOpenExternalLinks(False)
         self.login_link.linkActivated.connect(self.show_login_mode)

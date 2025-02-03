@@ -4,6 +4,10 @@ MAIN_WINDOW_STYLE = """
 QMainWindow {
     background-color: #3B4F52;
 }
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
 """
 
 ################ Button Styles ################
@@ -19,6 +23,10 @@ QPushButton {
 QPushButton:pressed {
     background-color: #0056b3;
 }
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
 """
 
 # Style for gray-colored buttons
@@ -31,6 +39,10 @@ QPushButton {
 }
 QPushButton:pressed {
     background-color: #5a6268;
+}
+QPushButton:focus {
+    outline: none;
+    border: none;
 }
 """
 
@@ -114,6 +126,10 @@ QPushButton {
 QPushButton:checked {
     background-color: #007BFF;
 }
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
 """
 
 ################ Time Picker Style ################
@@ -169,6 +185,10 @@ QPushButton {
 }
 QPushButton:checked {
     background-color: #494949;
+}
+QPushButton:focus {
+    outline: none;
+    border: none;
 }
 """
 

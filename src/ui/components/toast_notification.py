@@ -61,7 +61,7 @@ class ToastNotification(QWidget):
         colors = {
             "success": "#4ADE80",  # Bright green
             "error": "#F87171",  # Bright red
-            "info": "#60A5FA",  # Bright blue
+            "info": "#27A6FF",  # Bright blue
         }
         text_color = colors.get(message_type, colors["info"])
 
