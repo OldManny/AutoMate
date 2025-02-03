@@ -113,11 +113,44 @@ Use **Undo** to revert your last operation, and **Run** to execute your chosen t
 
 ### Email
 
+
 <p align="center">
   <img src="images/Email.png" alt="Email Dialog" />
 </p>
 
-**Under Development**: Sending emails and scheduling future deliveries.
+
+This feature integrates with the [Mailgun API](https://www.mailgun.com/) using your Mailgun credentials from environment variables.
+
+1. **Add Mailgun Credentials** in an .env file set at the root level of you project directory. For example:
+
+    ```sh
+    MAILGUN_API_KEY=your-mailgun-api-key
+    MAILGUN_DOMAIN=yourdomain.mailgun.org
+    ```
+
+2. **Fill Out the Fields**
+
+   - **To**: Specify recipient addresses (comma-separated for multiple). Must match an authorized Mailgun receiver for free tier, which is easy to set up in your mailgun account.
+   - **Cc**: (Optional) Add email addresses to carbon-copy.
+   - **Subject**: Provide a concise subject line.
+   - **From**: Insert the sender's address.
+
+3. **Write Your Email**
+Use the large text area to draft your email body. Drag and drop to add files as needed. Attachments will be included in your outgoing message.
+
+4. **Send Immediately**
+Click Send to dispatch the email through Mailgun. If successful, you’ll see a confirmation and your fields will be cleared.
+
+5. **(Optional) Schedule for Later**
+If you wish to send the email at a future time (or have it repeat on certain days), select Schedule from the sidebar after you completed all fields required in the Email window. Set your desired time and days to automate sending:
+
+   - **Time**: When the email should go out.
+   - **Days**: Which days to repeat (for recurring emails).
+
+6. **View & Manage Scheduled Emails**
+Check the Running modal to see any scheduled emails alongside other tasks. You can cancel them before they run if plans change.
+
+**Note**: Unlike file operations, there is no “Undo” once an email is sent. Make sure your addresses and attachments are correct before clicking **Send**.
 
 
 ### Data
@@ -127,13 +160,25 @@ Use **Undo** to revert your last operation, and **Run** to execute your chosen t
 
 ### Schedule
 
-Automate your tasks by scheduling them at specific times and days. The scheduler allows to pick a time and select recurring days for executing tasks.
-
 <p align="center">
   <img src="images/ScheduleAutomation.png" alt="Schedule Automation Modal" />
 </p>
 
+Automate tasks, such as file operations or sending emails by scheduling them at specific times and days. Once created, schedules are handled by a background daemon, allowing tasks to run even if you close the app. This daemon uses [APScheduler](https://apscheduler.readthedocs.io/en/stable/) and remains persistent across sessions:
+
+   - **Automatic Pause & Resume**: If your OS goes to sleep, the scheduling daemon pauses. Once your machine wakes, tasks resume automatically.
+   - **Recurring Tasks**: Pick a time and choose the days (e.g., weekdays) for your automation. The same tasks will run each specified day at the scheduled time.
+   - **Local JSON Sync**: A dedicated JSON file keeps track of all scheduled jobs (additions or deletions). A watchdog monitors changes and updates APScheduler accordingly, so any adjustments via the app interface are instantly reflected in the schedule.
+   - **File & Email Compatibility**: Schedule file operations (like “Sort by Date” or “Compress Files”) as well as emails (via Mailgun). Both use the same scheduling framework.
+
+This ensures complete control over automations, even when the app is closed.
+
+
 ### Running
+
+<p align="center">
+  <img src="images/Running.png" alt="Running Modal" />
+</p>
 
 The Running modal provides real-time status and management of ongoing or scheduled tasks:
 
@@ -144,17 +189,15 @@ The Running modal provides real-time status and management of ongoing or schedul
 
 Use the red ❌ icon to cancel a task before it begins.
 
-<p align="center">
-  <img src="images/Running.png" alt="Running Modal" />
-</p>
 
 ### Info
-
-An Info modal offers quick, context-sensitive tips and instructions for each feature, making it easy to understand and use.
 
 <p align="center">
   <img src="images/InfoModal.png" alt="Info Modal" />
 </p>
+
+An Info modal offers quick, context-sensitive tips and instructions for each feature, making it easy to understand and use.
+
 
 ## Undo
 
@@ -163,7 +206,7 @@ The Undo button in the File and Data dialogs will revert the last performed acti
 
 ## Testing
 
-To run tests for the Files, Authentication and Scheduler modules (others are in progress):
+To run tests for the Files, Email, Authentication and Scheduler modules (others are in progress):
 
 1. Navigate to the project root directory.
 2. Execute:
@@ -171,7 +214,7 @@ To run tests for the Files, Authentication and Scheduler modules (others are in 
     pytest tests/
     ```
 
-Future tests for **Email** and **Data** modules are under development.
+Future tests for **Data** module are under development.
 
 
 ## Attribution
