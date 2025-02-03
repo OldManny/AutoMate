@@ -28,7 +28,7 @@ class RunningJobsModal(BaseModalWindow):
     Allows users to view details and cancel individual jobs.
     """
 
-    COLUMN_WIDTHS = {"Type": 93, "Target": 120, "Time": 30, "Days": 50, "Cancel": 13}
+    COLUMN_WIDTHS = {"Type": 93, "Target": 120, "Time": 35, "Days": 45, "Cancel": 13}
 
     def __init__(self, scheduler_manager, parent=None):
         # Determine font size and weight based on platform

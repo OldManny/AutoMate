@@ -5,4 +5,5 @@ watchdog
 pytest-mock
 setuptools
 APScheduler
+python-dotenv
 requests
