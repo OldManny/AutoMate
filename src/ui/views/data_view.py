@@ -20,6 +20,7 @@ from src.ui.components.components import (
     create_icon_button,
     create_separator,
 )
+from src.ui.components.file_attachment import FileAttachmentWidget
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
 
@@ -129,6 +130,7 @@ class DataView(QWidget):
         card_layout.addWidget(info_header)
 
         # File Attachment Area
+        self.multi_file_area = FileAttachmentWidget()
         self.multi_file_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.multi_file_area.file_added.connect(self.on_multi_file_added)
         self.multi_file_area.file_removed.connect(self.on_multi_file_removed)
