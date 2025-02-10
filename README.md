@@ -86,9 +86,11 @@ The login system:
 
 ### Files
 
+
 <p align="center">
   <img src="images/OrganizeFiles.png" alt="Organize Files Dialog" />
 </p>
+
 
 From the sidebar, select Files to open the file management area. The interface has been updated for clarity:
 
@@ -155,7 +157,13 @@ Check the Running modal to see any scheduled emails alongside other tasks. You c
 
 ### Data
 
-**Under Development**: Automate data entry tasks for CSV, Excel, and PDF files.
+
+<p align="center">
+  <img src="images/Data.png" alt="Data Merging and Mirroring Dialog" />
+</p>
+
+
+**Under Development**: Automate data entry tasks for CSV and Excel.
 
 
 ### Schedule
