@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
     QButtonGroup,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QPushButton,
     QStackedWidget,
@@ -19,6 +18,7 @@ from PyQt5.QtWidgets import (
 from daemon import SchedulerManager
 from src.ui.modals.running_modal import RunningJobsModal
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE
+from src.ui.views.data_view import DataView
 from src.ui.views.email_view import EmailView
 from src.ui.views.file_view import FileView
 from src.ui.views.login_view import LoginView
@@ -203,6 +203,12 @@ class MainApp(QMainWindow):
                 email_view.open_schedule_modal()
                 return
 
+            # 3) Check if in the DataEntryView
+            data_view = current_widget.findChild(QWidget, "DataView")
+            if data_view:
+                data_view.open_schedule_modal()
+                return
+
     def open_running_modal(self):
         """
         Opens the RunningJobsModal, if logged in.
@@ -250,14 +256,20 @@ class MainApp(QMainWindow):
 
     def create_data_entry_page(self):
         """
-        Creates a placeholder page for the data entry module.
+        Creates the Data Entry page using DataEntryView.
         """
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        label = QLabel("Data Entry Module")
-        label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
-        return page
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Instantiate your DataEntryView, passing the scheduler if needed
+        data_view = DataView(parent=self, scheduler_manager=self.scheduler_manager)
+        data_view.setObjectName("DataEntryView")
+
+        layout.addWidget(data_view)
+        container.setLayout(layout)
+        return container
 
     def center(self):
         """
