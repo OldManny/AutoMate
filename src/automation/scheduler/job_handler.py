@@ -2,6 +2,7 @@ import logging
 
 from watchdog.events import FileSystemEventHandler
 
+from src.automation.data_entry import merge_data, mirror_data
 from src.automation.email_sender import send_email_via_mailgun
 from src.automation.file_organizer import (
     backup_files,
@@ -25,6 +26,8 @@ TASK_FUNCTIONS = {
     "compress_files": compress_files,
     "backup_files": backup_files,
     "send_email": send_email_via_mailgun,
+    "merge_data": merge_data,
+    "mirror_data": mirror_data,
 }
 
 # User-friendly task labels
@@ -37,6 +40,8 @@ TASK_LABELS = {
     "compress_files": "Compress Files",
     "backup_files": "Backup Files",
     "send_email": "Send Email",
+    "merge_data": "Merge Data",
+    "mirror_data": "Mirror Data",
 }
 
 

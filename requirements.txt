@@ -1,6 +1,8 @@
 PyQt5
 bcrypt
 pytest
+pandas
+openpyxl
 watchdog
 pytest-mock
 setuptools

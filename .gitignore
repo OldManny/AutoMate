@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+bugs.txt
+
 # Json file for CRON automation
 scheduled_jobs.json
 operation_log.json

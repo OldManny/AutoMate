@@ -183,7 +183,7 @@ class MainApp(QMainWindow):
 
     def open_schedule_modal(self):
         """
-        Opens the scheduling modal for both File and Email views.
+        Opens the scheduling modal for dialog views.
         """
         if not self.logged_in:
             self.stacked_widget.setCurrentIndex(0)
@@ -265,10 +265,10 @@ class MainApp(QMainWindow):
 
         # Instantiate your DataEntryView, passing the scheduler if needed
         data_view = DataView(parent=self, scheduler_manager=self.scheduler_manager)
-        data_view.setObjectName("DataEntryView")
+        data_view.setObjectName("DataView")
 
         layout.addWidget(data_view)
-        container.setLayout(layout)
+
         return container
 
     def center(self):

@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 from PyQt5.QtCore import Qt
@@ -13,6 +14,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from src.automation.data_entry import merge_data, mirror_data
 from src.ui.components.components import (
     create_button,
     create_card,
@@ -21,13 +23,16 @@ from src.ui.components.components import (
     create_separator,
 )
 from src.ui.components.file_attachment import FileAttachmentWidget
+from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
+from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
 
 
 class DataView(QWidget):
     """
-    UI component for managing data files, allowing users to merge or mirror CSV/Excel files.
+    UI component for managing data files, allowing users to merge or mirror CSV/Excel files,
+    always forcing a single 'Full Name' column.
     """
 
     CARD_FIXED_HEIGHT = 260  # Fixed height for the multi-file selection card
@@ -39,6 +44,10 @@ class DataView(QWidget):
 
         self.single_file_path = None
         self.multi_file_paths = []
+
+        # 1) Instantiate the toast
+        self.toast = ToastNotification(self)
+
         self.init_ui()
 
     def init_ui(self):
@@ -55,7 +64,6 @@ class DataView(QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
-        # Icon and description
         icon_label = QLabel()
         icon_pixmap = QPixmap("assets/icons/data.png").scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
@@ -101,7 +109,6 @@ class DataView(QWidget):
         card_layout.setSpacing(8)
         card_layout.setAlignment(Qt.AlignTop)
 
-        # Info Card Section Header
         info_header = QWidget()
         info_header_layout = QHBoxLayout(info_header)
         info_header_layout.setContentsMargins(10, 10, 0, 0)
@@ -112,7 +119,6 @@ class DataView(QWidget):
         info_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         info_header_layout.addWidget(info_text)
 
-        # Info Card Section Button
         info_button = create_icon_button(
             icon_path="assets/icons/info.png",
             icon_size=(16, 16),
@@ -129,7 +135,6 @@ class DataView(QWidget):
 
         card_layout.addWidget(info_header)
 
-        # File Attachment Area
         self.multi_file_area = FileAttachmentWidget()
         self.multi_file_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.multi_file_area.file_added.connect(self.on_multi_file_added)
@@ -156,7 +161,7 @@ class DataView(QWidget):
         radio_layout.addWidget(self.mirror_radio)
         main_layout.addLayout(radio_layout)
 
-        # Action Buttons
+        # Action Buttons (Undo / Run)
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
         btn_layout.addStretch()
@@ -176,7 +181,6 @@ class DataView(QWidget):
         """Displays an informational modal window."""
         self.info_window = InfoWindow(info_text, parent=self)
         main_window = self.window()
-        # Center the modal window on the main window
         if main_window:
             main_window_center = main_window.geometry().center()
             window_geometry = self.info_window.frameGeometry()
@@ -189,7 +193,6 @@ class DataView(QWidget):
         dlg = QFileDialog(self, "Select a single CSV/Excel File", os.getcwd())
         dlg.setFileMode(QFileDialog.ExistingFile)
         dlg.setNameFilters(["CSV Files (*.csv)", "Excel Files (*.xlsx *.xls)"])
-        # Show the dialog and set the selected file path
         if dlg.exec_():
             selected = dlg.selectedFiles()[0]
             self.single_file_path = selected
@@ -214,6 +217,95 @@ class DataView(QWidget):
         self.merge_radio.setChecked(True)
 
     def on_run_clicked(self):
-        """Prints the selected mode (Merge or Mirror) when the Run button is clicked."""
+        """Perform merge or mirror immediately, always forcing single 'Full Name' column."""
         mode = "Merge" if self.merge_radio.isChecked() else "Mirror"
-        print("Mode:", mode)
+        if not self.single_file_path:
+            self.toast.show_message("No master file selected.", "info")
+            return
+        if not self.multi_file_paths:
+            self.toast.show_message("No additional files selected.", "info")
+            return
+
+        if mode == "Merge":
+            merge_data(
+                source_directory=self.single_file_path,
+                data_params={
+                    "master_file": self.single_file_path,
+                    "other_files": self.multi_file_paths,
+                    "column_map": None,
+                    "mode": "merge",
+                    "force_single_name_col": True,  # Force a single Full Name column
+                },
+            )
+        else:  # Mirror
+            mirror_data(
+                source_directory=self.single_file_path,
+                data_params={
+                    "master_file": self.single_file_path,
+                    "other_files": self.multi_file_paths,
+                    "column_map": None,
+                    "mode": "mirror",
+                    "force_single_name_col": True,  # Force single name col
+                },
+            )
+
+        self.toast.show_message(f"{mode} completed", "success")
+
+    def open_schedule_modal(self):
+        """Open the ScheduleModalWindow for merging or mirroring tasks."""
+        if not self.single_file_path or not self.multi_file_paths:
+            self.toast.show_message("Select files first", "info")
+            return
+
+        schedule_modal = ScheduleModalWindow(self)
+        schedule_modal.schedule_saved.connect(self.on_schedule_saved)
+        schedule_modal.schedule_canceled.connect(self.on_schedule_canceled)
+
+        self.center_modal(schedule_modal)
+        schedule_modal.exec_()
+
+    def on_schedule_saved(self, selected_time, selected_days):
+        """Handle scheduling a data operation to be run at the specified time/days."""
+        mode = "merge" if self.merge_radio.isChecked() else "mirror"
+
+        # Notice we add force_single_name_col: True here as well
+        data_params = {
+            "master_file": self.single_file_path,
+            "other_files": self.multi_file_paths,
+            "mode": mode,
+            "column_map": None,
+            "force_single_name_col": True,  # Force single name col in scheduling too
+        }
+
+        if self.scheduler_manager:
+            job_id = self.scheduler_manager.add_scheduled_job(
+                task_type="data_task",
+                folder_target=self.single_file_path,
+                run_time=selected_time,
+                recurring_days=selected_days,
+                job_id=f"data_{datetime.now().timestamp()}",
+                data_params=data_params,
+            )
+            self.scheduler_manager.job_metadata[job_id]["data_params"] = data_params
+
+        if selected_days:
+            days_list = ", ".join(selected_days)
+            self.toast.show_message(f"{mode} scheduled for {selected_time}\non {days_list}", "success")
+        else:
+            self.toast.show_message(f"{mode} scheduled for {selected_time}", "success")
+
+        # Reset UI if desired
+        self.on_undo_clicked()
+
+    def on_schedule_canceled(self):
+        """Handle scheduling canceled."""
+        self.toast.show_message("Scheduling canceled", "info")
+
+    def center_modal(self, modal):
+        """Centers the modal relative to the main window."""
+        main_window = self.window()
+        if main_window:
+            center = main_window.geometry().center()
+            g = modal.frameGeometry()
+            g.moveCenter(center)
+            modal.move(g.topLeft())
