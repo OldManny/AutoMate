@@ -167,7 +167,7 @@ class DataView(QWidget):
         btn_layout.addStretch()
 
         self.undo_btn = create_button("Undo", GRAY_BUTTON_STYLE)
-        self.undo_btn.clicked.connect(self.on_undo_clicked)
+        self.undo_btn.clicked.connect(self.clear_form)
         btn_layout.addWidget(self.undo_btn)
 
         self.run_btn = create_button("Run", BLUE_BUTTON_STYLE)
@@ -208,7 +208,7 @@ class DataView(QWidget):
         if path in self.multi_file_paths:
             self.multi_file_paths.remove(path)
 
-    def on_undo_clicked(self):
+    def clear_form(self):
         """Clears selected files and resets the UI to its initial state."""
         self.single_file_path = None
         self.file_input.clear()
@@ -266,37 +266,51 @@ class DataView(QWidget):
 
     def on_schedule_saved(self, selected_time, selected_days):
         """Handle scheduling a data operation to be run at the specified time/days."""
+        if not self.single_file_path or not self.multi_file_paths:
+            self.toast.show_message("Select files first", "info")
+            return
+
         if self.merge_radio.isChecked():
             task_type = "merge_data"
+            operation_mode = "merge"
         else:
             task_type = "mirror_data"
+            operation_mode = "mirror"
 
-        # Data params for the scheduled task
+        # Create data params dictionary
         data_params = {
             "master_file": self.single_file_path,
             "other_files": self.multi_file_paths,
-            "force_single_name_col": True,  # Force single name col in scheduling too
+            "column_map": None,
+            "mode": operation_mode,
+            "force_single_name_col": True,
         }
 
         if self.scheduler_manager:
-            job_id = self.scheduler_manager.add_scheduled_job(
-                task_type=task_type,
-                folder_target=self.single_file_path,
-                run_time=selected_time,
-                recurring_days=selected_days,
-                job_id=f"{task_type}_{datetime.now().timestamp()}",
-                data_params=data_params,
-            )
-            self.scheduler_manager.job_metadata[job_id]["data_params"] = data_params
+            try:
+                # Add the scheduled job
+                job_id = self.scheduler_manager.add_scheduled_job(
+                    task_type=task_type,
+                    folder_target=self.single_file_path,
+                    run_time=selected_time,
+                    recurring_days=selected_days,
+                    job_id=f"{task_type}_{datetime.now().timestamp()}",
+                    data_params=data_params,
+                )
+                self.scheduler_manager.job_metadata[job_id]["data_params"] = data_params
 
-        if selected_days:
-            days_list = ", ".join(selected_days)
-            self.toast.show_message(f"{task_type} scheduled for {selected_time}\non {days_list}", "success")
-        else:
-            self.toast.show_message(f"{task_type} scheduled for {selected_time}", "success")
+                if selected_days:
+                    days_list = ", ".join(selected_days)
+                    self.toast.show_message(f"{task_type} scheduled for {selected_time}\non {days_list}", "success")
+                else:
+                    self.toast.show_message(f"{task_type} scheduled for {selected_time}", "success")
 
-        # Undo
-        self.on_undo_clicked()
+                # Clear the form after successful scheduling
+                self.clear_form()
+
+            except Exception as e:
+                self.toast.show_message(f"Failed to schedule: {str(e)}", "error")
+                return
 
     def on_schedule_canceled(self):
         """Handle scheduling canceled."""
