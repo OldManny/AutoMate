@@ -136,7 +136,7 @@ class SchedulerManager:
             logger.error(f"Error removing job {job_id} from JSON: {e}")
 
     def add_scheduled_job(
-        self, task_type, folder_target, run_time, recurring_days=None, job_id=None, email_params=None
+        self, task_type, folder_target, run_time, recurring_days=None, job_id=None, email_params=None, data_params=None
     ):
         """
         Schedule a new job in APScheduler.
@@ -146,6 +146,8 @@ class SchedulerManager:
             job_id = f"{task_type}_{datetime.now().timestamp()}"
 
         logger.info(f"Adding job {job_id} -> Task: {task_type}, Time: {run_time}, Days: {recurring_days}")
+
+        # Build job_data with both email_params and data_params
         job_data = {
             "job_id": job_id,
             "task_type": task_type,
@@ -153,13 +155,15 @@ class SchedulerManager:
             "run_time": run_time,
             "recurring_days": recurring_days or [],
             "email_params": email_params or {},
+            "data_params": data_params or {},
         }
+
         self._schedule_job(job_data, persist=True)
         return job_id
 
     def _schedule_job(self, job_data, persist=True):
         """
-        Add a job to APScheduler and save it to the JSON file.
+        Add a job to APScheduler and save it to the JSON file if persist=True.
         """
         job_id = job_data["job_id"]
         task_type = job_data["task_type"]
@@ -167,6 +171,7 @@ class SchedulerManager:
         run_time = job_data["run_time"]
         recurring_days = job_data.get("recurring_days", [])
         email_params = job_data.get("email_params", {})
+        data_params = job_data.get("data_params", {})
 
         hour, minute = map(int, run_time.split(":"))
         now = datetime.now()
@@ -196,23 +201,21 @@ class SchedulerManager:
             trigger = CronTrigger(day_of_week=day_of_week, hour=hour, minute=minute)
             logger.info(f"Job {job_id} is recurring on {recurring_days} at {run_time}.")
         else:
-            # Schedule for today or tomorrow if time has passed
+            # One-time job => schedule for today or tomorrow if time is past
             schedule_today = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
             if schedule_today <= now:
-                # If it's past today's HH:MM, schedule for tomorrow
                 schedule_today += timedelta(days=1)
             trigger = DateTrigger(run_date=schedule_today)
             logger.info(f"One-time job {job_id} scheduled for {schedule_today}.")
 
-        # Get the corresponding function for the task
+        # Get the function for the task
         task_callable = TASK_FUNCTIONS.get(task_type)
         if not task_callable:
             logger.error(f"Task function '{task_type}' not found. Job {job_id} not scheduled.")
             return
 
-        # Add the job to the scheduler
+        # Decide how to add the job
         if task_type == "send_email":
-            # Pass email-specific parameters
             self.scheduler.add_job(
                 func=task_callable,
                 trigger=trigger,
@@ -227,8 +230,19 @@ class SchedulerManager:
                 },
                 replace_existing=True,
             )
+        elif task_type in ("merge_data", "mirror_data"):
+            self.scheduler.add_job(
+                func=TASK_FUNCTIONS[task_type],
+                trigger=trigger,
+                id=job_id,
+                kwargs={
+                    "source_directory": folder_target,
+                    "data_params": data_params,
+                },
+                replace_existing=True,
+            )
         else:
-            # Pass file-task specific parameters
+            # File or other tasks
             self.scheduler.add_job(
                 func=task_callable,
                 trigger=trigger,
@@ -237,7 +251,7 @@ class SchedulerManager:
                 replace_existing=True,
             )
 
-        # Persist the job data if requested
+        # Persist job_data if requested
         if persist:
             self._write_job_to_file(job_data)
 

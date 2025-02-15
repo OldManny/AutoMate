@@ -266,35 +266,36 @@ class DataView(QWidget):
 
     def on_schedule_saved(self, selected_time, selected_days):
         """Handle scheduling a data operation to be run at the specified time/days."""
-        mode = "merge" if self.merge_radio.isChecked() else "mirror"
+        if self.merge_radio.isChecked():
+            task_type = "merge_data"
+        else:
+            task_type = "mirror_data"
 
-        # Notice we add force_single_name_col: True here as well
+        # Data params for the scheduled task
         data_params = {
             "master_file": self.single_file_path,
             "other_files": self.multi_file_paths,
-            "mode": mode,
-            "column_map": None,
             "force_single_name_col": True,  # Force single name col in scheduling too
         }
 
         if self.scheduler_manager:
             job_id = self.scheduler_manager.add_scheduled_job(
-                task_type="data_task",
+                task_type=task_type,
                 folder_target=self.single_file_path,
                 run_time=selected_time,
                 recurring_days=selected_days,
-                job_id=f"data_{datetime.now().timestamp()}",
+                job_id=f"{task_type}_{datetime.now().timestamp()}",
                 data_params=data_params,
             )
             self.scheduler_manager.job_metadata[job_id]["data_params"] = data_params
 
         if selected_days:
             days_list = ", ".join(selected_days)
-            self.toast.show_message(f"{mode} scheduled for {selected_time}\non {days_list}", "success")
+            self.toast.show_message(f"{task_type} scheduled for {selected_time}\non {days_list}", "success")
         else:
-            self.toast.show_message(f"{mode} scheduled for {selected_time}", "success")
+            self.toast.show_message(f"{task_type} scheduled for {selected_time}", "success")
 
-        # Reset UI if desired
+        # Undo
         self.on_undo_clicked()
 
     def on_schedule_canceled(self):
