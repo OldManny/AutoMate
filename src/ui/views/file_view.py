@@ -258,9 +258,16 @@ class FileView(QWidget):
         """
         Opens the Schedule Modal Window for setting automation schedules.
         """
-        schedule_modal = ScheduleModalWindow(self)
+        folder_path = self.folder_input.text().strip()
+        if not folder_path:
+            self.show_status("Select a folder", "info")
+            return
 
-        # Connect signals for notifications
+        if not any(checkbox.isChecked() for checkbox in self.checkboxes):
+            self.show_status("Select an operation", "info")
+            return
+
+        schedule_modal = ScheduleModalWindow(self)
         schedule_modal.schedule_saved.connect(self.on_schedule_saved)
         schedule_modal.schedule_canceled.connect(self.on_schedule_canceled)
 

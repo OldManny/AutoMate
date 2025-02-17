@@ -149,6 +149,10 @@ class EmailView(QWidget):
 
     def open_schedule_modal(self):
         """Opens the Schedule Modal Window for setting email schedules."""
+        if not self.to_input.text().strip() or not self.from_input.text().strip():
+            self.toast.show_message("Specify 'To' and 'From'", "info")
+            return
+
         schedule_modal = ScheduleModalWindow(self)
         schedule_modal.schedule_saved.connect(self.on_schedule_saved)
         schedule_modal.schedule_canceled.connect(self.on_schedule_canceled)

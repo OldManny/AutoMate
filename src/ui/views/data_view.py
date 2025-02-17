@@ -266,16 +266,13 @@ class DataView(QWidget):
 
     def on_schedule_saved(self, selected_time, selected_days):
         """Handle scheduling a data operation to be run at the specified time/days."""
-        if not self.single_file_path or not self.multi_file_paths:
-            self.toast.show_message("Select files first", "info")
-            return
 
         if self.merge_radio.isChecked():
             task_type = "merge_data"
-            operation_mode = "merge"
+            operation_mode = "Merge"
         else:
             task_type = "mirror_data"
-            operation_mode = "mirror"
+            operation_mode = "Mirror"
 
         # Create data params dictionary
         data_params = {
@@ -301,9 +298,11 @@ class DataView(QWidget):
 
                 if selected_days:
                     days_list = ", ".join(selected_days)
-                    self.toast.show_message(f"{task_type} scheduled for {selected_time}\non {days_list}", "success")
+                    self.toast.show_message(
+                        f"{operation_mode} scheduled for {selected_time}\non {days_list}", "success"
+                    )
                 else:
-                    self.toast.show_message(f"{task_type} scheduled for {selected_time}", "success")
+                    self.toast.show_message(f"{operation_mode} scheduled for {selected_time}", "success")
 
                 # Clear the form after successful scheduling
                 self.clear_form()
