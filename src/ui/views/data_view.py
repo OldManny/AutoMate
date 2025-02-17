@@ -128,7 +128,7 @@ class DataView(QWidget):
             lambda: self.show_info_window(
                 "Merge combines data from multiple files into a single master, "
                 "while Mirror copies the master’s contents to every other file."
-                "\n\nThis workflow keeps everything synchronized and updated with minimal effort."
+                "\n\nThis workflow keeps everything synchronized and updated."
             )
         )
         info_header_layout.addWidget(info_button, alignment=Qt.AlignRight | Qt.AlignVCenter)

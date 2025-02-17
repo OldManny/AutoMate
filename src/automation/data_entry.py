@@ -203,9 +203,9 @@ def merge_data(source_directory, data_params=None):
     # Read master file
     master_df = read_csv_or_excel(master_file)
 
-    # Determine name handling strategy based on master file
-    has_full_name = any(unify_column_name(col) == "full_name" for col in master_df.columns)
-    has_split_names = any(unify_column_name(col) == "first_name" for col in master_df.columns) or any(
+    # Determine initial name handling strategy based on master file
+    master_has_full = any(unify_column_name(col) == "full_name" for col in master_df.columns)
+    master_has_split = any(unify_column_name(col) == "first_name" for col in master_df.columns) or any(
         unify_column_name(col) == "last_name" for col in master_df.columns
     )
 
@@ -215,6 +215,7 @@ def merge_data(source_directory, data_params=None):
         unified = unify_column_name(col)
         master_mapping[unified] = col
 
+    # Process each additional file
     for f in other_files:
         if not os.path.isfile(f):
             continue
@@ -227,56 +228,59 @@ def merge_data(source_directory, data_params=None):
         if column_map and f in column_map:
             incoming_df.rename(columns=column_map[f], inplace=True)
 
-        # Pre-process name columns to match master file's structure
-        if force_single or has_full_name:
+        # Handle name columns based on master structure
+        if master_has_full and not master_has_split:
+            # Master only has full name
             combine_first_last_into_full(incoming_df)
             if force_single:
                 # Remove first/last name columns after combining
                 for col in list(incoming_df.columns):
                     if unify_column_name(col) in ["first_name", "last_name"]:
                         incoming_df.drop(columns=[col], inplace=True)
-        elif has_split_names:
+        elif master_has_split and not master_has_full:
+            # Master only has split names
             split_full_into_first_last(incoming_df)
+            if force_single:
+                # Remove full name column after splitting
+                for col in list(incoming_df.columns):
+                    if unify_column_name(col) == "full_name":
+                        incoming_df.drop(columns=[col], inplace=True)
+        elif master_has_full and master_has_split:
+            # Master has both - maintain both formats
+            if any(unify_column_name(col) == "full_name" for col in incoming_df.columns):
+                split_full_into_first_last(incoming_df, create_if_missing=not force_single)
+            if any(unify_column_name(col) in ["first_name", "last_name"] for col in incoming_df.columns):
+                combine_first_last_into_full(incoming_df, create_if_missing=not force_single)
 
         # Map incoming columns to master columns based on unified names
         col_mapping = {}
         for col in incoming_df.columns:
             unified = unify_column_name(col)
             if unified in master_mapping:
-                col_mapping[col] = master_mapping[unified]
+                # Only map if names are different
+                if col != master_mapping[unified]:
+                    col_mapping[col] = master_mapping[unified]
 
         if col_mapping:
             incoming_df.rename(columns=col_mapping, inplace=True)
 
-        # Add any new columns to master
-        for col in incoming_df.columns:
-            if col not in master_df.columns:
-                master_df[col] = ""
+        # Add new columns from master if they don't exist in incoming
+        for mcol in master_df.columns:
+            if mcol not in incoming_df.columns:
+                incoming_df[mcol] = ""
 
-        # Append rows while preserving master structure
-        new_rows = []
-        for _, row in incoming_df.iterrows():
-            row_dict = {}
-            for col in master_df.columns:
-                if col in incoming_df.columns:
-                    row_dict[col] = row[col]
-                else:
-                    row_dict[col] = ""
-            new_rows.append(row_dict)
+        # Reorder columns to match master
+        incoming_df = incoming_df[master_df.columns]
 
-        if new_rows:
-            add_df = pd.DataFrame(new_rows, columns=master_df.columns)
-            master_df = pd.concat([master_df, add_df], ignore_index=True)
+        # Concatenate dataframes efficiently
+        master_df = pd.concat([master_df, incoming_df], ignore_index=True)
 
-    # Final processing for name columns
-    if force_single:
-        combine_first_last_into_full(master_df)
-        # Remove first/last name columns after combining
-        for col in list(master_df.columns):
-            if unify_column_name(col) in ["first_name", "last_name"]:
-                master_df.drop(columns=[col], inplace=True)
-
+    # Final processing
     master_df.drop_duplicates(inplace=True)
+
+    # Ensure no NaN values
+    master_df = master_df.fillna("")
+
     write_csv_or_excel(master_df, master_file)
 
 
@@ -295,52 +299,16 @@ def mirror_data(source_directory, data_params=None):
     if not master_file or not os.path.isfile(master_file):
         return
 
-    # Read and unify master file columns
-    master_df = read_csv_or_excel(master_file)
+    # Use the columns names from master
+    master_raw_df = read_csv_or_excel(master_file)
+
+    # A working copy for name unification
+    master_df = master_raw_df.copy()
 
     # Check if master has name columns
     master_has_full = any(unify_column_name(col) == "full_name" for col in master_df.columns)
     master_has_first = any(unify_column_name(col) == "first_name" for col in master_df.columns)
     master_has_last = any(unify_column_name(col) == "last_name" for col in master_df.columns)
-
-    # Pre-process master data for name columns if needed
-    if master_has_full and (master_has_first or master_has_last) and not force_single:
-        # Both name formats exist - ensure they're in sync
-        for idx in master_df.index:
-            # Find column names
-            full_col = next((c for c in master_df.columns if unify_column_name(c) == "full_name"), None)
-            first_col = next((c for c in master_df.columns if unify_column_name(c) == "first_name"), None)
-            last_col = next((c for c in master_df.columns if unify_column_name(c) == "last_name"), None)
-
-            if full_col and (first_col or last_col):
-                # Get existing values
-                full_val = str(master_df.at[idx, full_col]).strip() if pd.notna(master_df.at[idx, full_col]) else ""
-                f_val = (
-                    str(master_df.at[idx, first_col]).strip()
-                    if first_col and pd.notna(master_df.at[idx, first_col])
-                    else ""
-                )
-                l_val = (
-                    str(master_df.at[idx, last_col]).strip()
-                    if last_col and pd.notna(master_df.at[idx, last_col])
-                    else ""
-                )
-
-                # If full name is empty but there is first/last, construct it
-                if not full_val and (f_val or l_val):
-                    master_df.at[idx, full_col] = " ".join([p for p in [f_val, l_val] if p])
-
-                # If there is full name but missing first/last, split it
-                elif full_val and not (f_val and l_val):
-                    parts = full_val.split(maxsplit=1)
-                    if len(parts) == 2 and first_col and last_col:
-                        master_df.at[idx, first_col] = parts[0]
-                        master_df.at[idx, last_col] = parts[1]
-                    elif len(parts) == 1:
-                        if last_col:  # Single word goes to last name
-                            master_df.at[idx, last_col] = parts[0]
-                        if first_col:
-                            master_df.at[idx, first_col] = ""
 
     # Process each target file
     for target_file in other_files:
@@ -350,24 +318,60 @@ def mirror_data(source_directory, data_params=None):
         # Read target file
         target_df = read_csv_or_excel(target_file)
 
-        # Handle empty target file - simply copy master structure and data
+        # Handle completely empty file (no columns) - make exact copy
         if target_df.empty and target_df.columns.size == 0:
-            write_csv_or_excel(master_df.copy(), target_file)
+            write_csv_or_excel(master_raw_df, target_file)
             continue
+
+        # Pre-process master data for name columns if needed
+        if master_has_full and (master_has_first or master_has_last) and not force_single:
+            # Both name formats exist - ensure they're in sync
+            for idx in master_df.index:
+                # Find column names
+                full_col = next((c for c in master_df.columns if unify_column_name(c) == "full_name"), None)
+                first_col = next((c for c in master_df.columns if unify_column_name(c) == "first_name"), None)
+                last_col = next((c for c in master_df.columns if unify_column_name(c) == "last_name"), None)
+
+                if full_col and (first_col or last_col):
+                    # Get existing values
+                    full_val = str(master_df.at[idx, full_col]).strip() if pd.notna(master_df.at[idx, full_col]) else ""
+                    f_val = (
+                        str(master_df.at[idx, first_col]).strip()
+                        if first_col and pd.notna(master_df.at[idx, first_col])
+                        else ""
+                    )
+                    l_val = (
+                        str(master_df.at[idx, last_col]).strip()
+                        if last_col and pd.notna(master_df.at[idx, last_col])
+                        else ""
+                    )
+
+                    # If full name is empty but there is first/last, construct it
+                    if not full_val and (f_val or l_val):
+                        master_df.at[idx, full_col] = " ".join([p for p in [f_val, l_val] if p])
+
+                    # If there is full name but missing first/last, split it
+                    elif full_val and not (f_val and l_val):
+                        parts = full_val.split(maxsplit=1)
+                        if len(parts) == 2 and first_col and last_col:
+                            master_df.at[idx, first_col] = parts[0]
+                            master_df.at[idx, last_col] = parts[1]
+                        elif len(parts) == 1:
+                            if last_col:  # Single word goes to last name
+                                master_df.at[idx, last_col] = parts[0]
+                            if first_col:
+                                master_df.at[idx, first_col] = ""
+
+        # Apply column mapping if specified
+        master_copy = master_df.copy()
+        if column_map and target_file in column_map:
+            invert_map = {v: k for k, v in column_map[target_file].items()}
+            master_copy.rename(columns=invert_map, inplace=True)
 
         # Check target name columns
         target_has_full = any(unify_column_name(col) == "full_name" for col in target_df.columns)
         target_has_first = any(unify_column_name(col) == "first_name" for col in target_df.columns)
         target_has_last = any(unify_column_name(col) == "last_name" for col in target_df.columns)
-
-        # Prepare master data copy for this target
-        master_copy = master_df.copy()
-
-        # Apply column mapping if specified
-        if column_map and target_file in column_map:
-            # Invert the mapping for mirror operation
-            invert_map = {v: k for k, v in column_map[target_file].items()}
-            master_copy = master_copy.rename(columns=invert_map)
 
         # Handle name columns based on target structure
         if target_has_full and not (target_has_first or target_has_last):
