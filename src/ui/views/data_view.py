@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from src.automation.data_entry import merge_data, mirror_data
+from src.automation.data_entry import merge_data, mirror_data, undo_last_operation
 from src.ui.components.components import (
     create_button,
     create_card,
@@ -167,7 +167,7 @@ class DataView(QWidget):
         btn_layout.addStretch()
 
         self.undo_btn = create_button("Undo", GRAY_BUTTON_STYLE)
-        self.undo_btn.clicked.connect(self.clear_form)
+        self.undo_btn.clicked.connect(self.on_undo_clicked)
         btn_layout.addWidget(self.undo_btn)
 
         self.run_btn = create_button("Run", BLUE_BUTTON_STYLE)
@@ -250,6 +250,16 @@ class DataView(QWidget):
             )
 
         self.toast.show_message(f"{mode} completed", "success")
+
+    def on_undo_clicked(self):
+        """Handles the Undo button click by attempting to revert the last data operation."""
+        try:
+            undo_last_operation()
+            self.toast.show_message("Undo successful", "success")
+            # Update UI state
+            # self.clear_form()
+        except Exception as e:
+            self.toast.show_message(f"Undo failed: {str(e)}", "error")
 
     def open_schedule_modal(self):
         """Open the ScheduleModalWindow for merging or mirroring tasks."""

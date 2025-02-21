@@ -1,4 +1,8 @@
+import ctypes
+import json
 import os
+import platform
+import shutil
 
 import pandas as pd
 
@@ -47,6 +51,40 @@ DISPLAY_NAMES = {
     "username": "Username",
     "id": "ID",
 }
+
+# Define a log file for data operations
+LOG_FILE = "data_operation_log.json"
+
+
+def log_operation(operation, master_file, backup_info):
+    """
+    Logs the operation.
+
+    For merge operations, backups is a single backup file path (string).
+    For mirror operations, backups is a dict mapping target_file -> backup_file.
+    """
+    log_data = {
+        "operation": operation,
+        "master_file": master_file,
+        "backup_file": backup_info if operation == "merge_data" else None,
+        "backups": backup_info if operation == "mirror_data" else None,
+    }
+    with open(LOG_FILE, "w") as log_f:
+        json.dump(log_data, log_f)
+
+
+def make_file_hidden_windows(filepath):
+    """
+    Sets the 'hidden' attribute on Windows for a given file path.
+    No effect on non-Windows platforms.
+    """
+    if platform.system().lower().startswith("win") and os.path.exists(filepath):
+        FILE_ATTRIBUTE_HIDDEN = 0x02
+        try:
+            # Convert to a wide string (W) for SetFileAttributesW
+            ctypes.windll.kernel32.SetFileAttributesW(str(filepath), FILE_ATTRIBUTE_HIDDEN)
+        except Exception as e:
+            print(f"Could not hide file {filepath}. Error: {e}")
 
 
 def combine_first_last_into_full(df: pd.DataFrame, create_if_missing: bool = True):
@@ -197,8 +235,14 @@ def merge_data(source_directory, data_params=None):
     column_map = data_params.get("column_map")
     force_single = data_params.get("force_single_name_col", False)
 
-    if not master_file or not os.path.isfile(master_file):
-        return
+    # Backup the master file before overwiting it
+    if master_file and os.path.isfile(master_file):
+        dir_name = os.path.dirname(master_file)
+        base_name = os.path.basename(master_file)
+        backup_file = os.path.join(dir_name, "." + base_name + ".bak")
+        shutil.copy(master_file, backup_file)
+        make_file_hidden_windows(backup_file)
+        log_operation("merge_data", master_file, backup_file)
 
     # Read master file
     master_df = read_csv_or_excel(master_file)
@@ -295,9 +339,26 @@ def mirror_data(source_directory, data_params=None):
     other_files = data_params.get("other_files", [])
     column_map = data_params.get("column_map")
     force_single = data_params.get("force_single_name_col", False)
+    target_files = data_params.get("other_files", [])
 
     if not master_file or not os.path.isfile(master_file):
         return
+
+    # Dictionary to store backups for each target file
+    backups = {}
+
+    # Backup each target file that exists before overwriting it
+    for target in target_files:
+        if os.path.isfile(target):
+            dir_name = os.path.dirname(target)
+            base_name = os.path.basename(target)
+            backup = os.path.join(dir_name, "." + base_name + ".bak")
+            shutil.copy(target, backup)
+            make_file_hidden_windows(backup)
+            backups[target] = backup
+
+    # Log the mirror operation with backups mapping
+    log_operation("mirror_data", master_file, backups)
 
     # Use the columns names from master
     master_raw_df = read_csv_or_excel(master_file)
@@ -440,3 +501,40 @@ def mirror_data(source_directory, data_params=None):
         # Remove duplicates and write back to file
         target_df.drop_duplicates(inplace=True)
         write_csv_or_excel(target_df, target_file)
+
+
+def undo_last_operation():
+    """
+    Reverts the last merge or mirror operation.
+    For merge_data, it restores the master file from its backup.
+    For mirror_data, it restores each target file from its respective backup.
+    """
+    if not os.path.exists(LOG_FILE):
+        raise ValueError("Nothing to undo")
+
+    with open(LOG_FILE, "r") as log_f:
+        log_data = json.load(log_f)
+
+    operation = log_data.get("operation")
+    master_file = log_data.get("master_file")
+
+    if operation == "merge_data":
+        backup = log_data.get("backup_file") or log_data.get("backups")
+        if master_file and backup and os.path.exists(backup):
+            shutil.copy(backup, master_file)
+            os.remove(backup)
+        else:
+            raise ValueError("No valid backup found for merge operation.")
+    elif operation == "mirror_data":
+        backups = log_data.get("backups")
+        if backups and isinstance(backups, dict):
+            for target, backup in backups.items():
+                if os.path.exists(backup):
+                    shutil.copy(backup, target)
+                    os.remove(backup)
+        else:
+            raise ValueError("No valid backups found for mirror operation.")
+    else:
+        raise ValueError("Unrecognized operation type.")
+
+    os.remove(LOG_FILE)
