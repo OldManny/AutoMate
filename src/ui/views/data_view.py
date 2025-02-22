@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from src.automation.data_entry import merge_data, mirror_data, undo_last_operation
+from src.automation.data_entry import merge_data, mirror_data
 from src.ui.components.components import (
     create_button,
     create_card,
@@ -27,6 +27,7 @@ from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.utils.undo_manager import undo_data_operation
 
 
 class DataView(QWidget):
@@ -254,7 +255,7 @@ class DataView(QWidget):
     def on_undo_clicked(self):
         """Handles the Undo button click by attempting to revert the last data operation."""
         try:
-            undo_last_operation()
+            undo_data_operation()
             self.toast.show_message("Undo successful", "success")
             # Update UI state
             # self.clear_form()

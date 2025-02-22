@@ -10,7 +10,6 @@ from src.automation.file_organizer import (
     sort_by_date,
     sort_by_size,
     sort_by_type,
-    undo_last_operation,
 )
 from src.automation.scheduler.job_handler import TASK_LABELS
 from src.ui.components.components import (
@@ -24,6 +23,7 @@ from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.utils.undo_manager import undo_file_operation
 
 
 class FileView(QWidget):
@@ -356,7 +356,7 @@ class FileView(QWidget):
         Handles the Undo button click to revert the last file organization operation.
         """
         try:
-            undo_last_operation()
+            undo_file_operation()
             self.show_status("Undone", "success")
         except ValueError as e:
             self.show_status(str(e))

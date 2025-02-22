@@ -1,10 +1,11 @@
 import ctypes
-import json
 import os
 import platform
 import shutil
 
 import pandas as pd
+
+from src.utils.undo_manager import clear_previous_log, log_operation
 
 # Dictionary of column synonyms to standardize naming conventions.
 SYNONYMS = {
@@ -53,24 +54,7 @@ DISPLAY_NAMES = {
 }
 
 # Define a log file for data operations
-LOG_FILE = "data_operation_log.json"
-
-
-def log_operation(operation, master_file, backup_info):
-    """
-    Logs the operation.
-
-    For merge operations, backups is a single backup file path (string).
-    For mirror operations, backups is a dict mapping target_file -> backup_file.
-    """
-    log_data = {
-        "operation": operation,
-        "master_file": master_file,
-        "backup_file": backup_info if operation == "merge_data" else None,
-        "backups": backup_info if operation == "mirror_data" else None,
-    }
-    with open(LOG_FILE, "w") as log_f:
-        json.dump(log_data, log_f)
+LOG_FILE = "operation_log.json"
 
 
 def make_file_hidden_windows(filepath):
@@ -226,6 +210,9 @@ def write_csv_or_excel(df: pd.DataFrame, path: str):
 
 def merge_data(source_directory, data_params=None):
     """Merges multiple data files while ensuring consistent name handling."""
+    # Remove leftover backups from any previous operation
+    clear_previous_log()
+
     if not data_params:
         return
 
@@ -332,6 +319,9 @@ def mirror_data(source_directory, data_params=None):
     """
     Mirror master file data to targets, properly handling name columns and edge cases.
     """
+    # Remove leftover backups from any previous operation
+    clear_previous_log()
+
     if not data_params:
         return
 
@@ -501,40 +491,3 @@ def mirror_data(source_directory, data_params=None):
         # Remove duplicates and write back to file
         target_df.drop_duplicates(inplace=True)
         write_csv_or_excel(target_df, target_file)
-
-
-def undo_last_operation():
-    """
-    Reverts the last merge or mirror operation.
-    For merge_data, it restores the master file from its backup.
-    For mirror_data, it restores each target file from its respective backup.
-    """
-    if not os.path.exists(LOG_FILE):
-        raise ValueError("Nothing to undo")
-
-    with open(LOG_FILE, "r") as log_f:
-        log_data = json.load(log_f)
-
-    operation = log_data.get("operation")
-    master_file = log_data.get("master_file")
-
-    if operation == "merge_data":
-        backup = log_data.get("backup_file") or log_data.get("backups")
-        if master_file and backup and os.path.exists(backup):
-            shutil.copy(backup, master_file)
-            os.remove(backup)
-        else:
-            raise ValueError("No valid backup found for merge operation.")
-    elif operation == "mirror_data":
-        backups = log_data.get("backups")
-        if backups and isinstance(backups, dict):
-            for target, backup in backups.items():
-                if os.path.exists(backup):
-                    shutil.copy(backup, target)
-                    os.remove(backup)
-        else:
-            raise ValueError("No valid backups found for mirror operation.")
-    else:
-        raise ValueError("Unrecognized operation type.")
-
-    os.remove(LOG_FILE)
