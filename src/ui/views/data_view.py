@@ -257,8 +257,8 @@ class DataView(QWidget):
         try:
             undo_data_operation()
             self.toast.show_message("Undo successful", "success")
-            # Update UI state
-            # self.clear_form()
+        except ValueError as e:
+            self.toast.show_message(str(e), "info")
         except Exception as e:
             self.toast.show_message(f"Undo failed: {str(e)}", "error")
 

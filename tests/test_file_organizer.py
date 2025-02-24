@@ -11,8 +11,8 @@ from src.automation.file_organizer import (
     sort_by_date,
     sort_by_size,
     sort_by_type,
-    undo_last_operation,
 )
+from src.utils.undo_manager import undo_file_operation
 
 
 @pytest.fixture
@@ -116,12 +116,12 @@ def test_backup_files(test_directory):
     assert (backup_folder / "doc1.pdf").exists()
 
 
-def test_undo_last_operation(test_directory):
+def test_undo_file_operation(test_directory):
     """
-    Test the undo_last_operation function.
+    Test the undo_file_operation function.
     """
     # Perform an operation
     sort_by_type(str(test_directory))
-    undo_last_operation()
+    undo_file_operation()
     assert (test_directory / "image1.jpg").exists()
     assert not (test_directory / "images").exists()
