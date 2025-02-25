@@ -149,9 +149,6 @@ If you wish to send the email at a future time (or have it repeat on certain day
    - **Time**: When the email should go out.
    - **Days**: Which days to repeat (for recurring emails).
 
-6. **View & Manage Scheduled Emails**
-Check the Running modal to see any scheduled emails alongside other tasks. You can cancel them before they run if plans change.
-
 **Note**: Unlike file operations, there is no “Undo” once an email is sent. Make sure your addresses and attachments are correct before clicking **Send**.
 
 
@@ -163,7 +160,26 @@ Check the Running modal to see any scheduled emails alongside other tasks. You c
 </p>
 
 
-**Under Development**: Automate data entry tasks for CSV and Excel.
+The **Data** module automates CSV/Excel operations via two actions:
+
+  **Merge**
+  - Combine data from multiple CSV/Excel files into one master file.
+  - If the master file already has columns (even if it has no rows), that structure is respected. The merge copies data only into the columns that match via synonyms, ignoring additional columns from the source files.
+  - If the master file is empty (no columns at all), all relevant columns from the source files are carried over.
+  - Name fields (“First/Last Name” vs. “Full Name”) are automatically handled. The application checks the master file’s existing name format: if it only has “Full Name,” incoming data is combined; if it only has split columns, incoming “Full Name” fields are split. It handles various column fields, not only Names.
+
+  **Mirror**
+  - Copy the master file’s contents to one or more target files, syncing columns as needed.
+  - Existing columns in each target file remain intact, and only matching columns get updated with master data. Empty targets inherit the master’s columns.
+
+  This allows flexible usage:
+
+      - To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
+      - To **import everything**, use an empty file so all columns from the sources are included.
+      - All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
+
+  **Undo**
+  - Each merge or mirror allows to revert the master or target files to their pre‐operation state by using the **Undo** button.
 
 
 ### Schedule
@@ -177,7 +193,7 @@ Automate tasks, such as file operations or sending emails by scheduling them at 
    - **Automatic Pause & Resume**: If your OS goes to sleep, the scheduling daemon pauses. Once your machine wakes, tasks resume automatically.
    - **Recurring Tasks**: Pick a time and choose the days (e.g., weekdays) for your automation. The same tasks will run each specified day at the scheduled time.
    - **Local JSON Sync**: A dedicated JSON file keeps track of all scheduled jobs (additions or deletions). A watchdog monitors changes and updates APScheduler accordingly, so any adjustments via the app interface are instantly reflected in the schedule.
-   - **File & Email Compatibility**: Schedule file operations (like “Sort by Date” or “Compress Files”) as well as emails (via Mailgun). Both use the same scheduling framework.
+   - **File, Email and Data Compatibility**: Schedule file operations (like “Sort by Date” or “Compress Files”) as well as emails (via Mailgun). Both use the same scheduling framework.
 
 This ensures complete control over automations, even when the app is closed.
 
