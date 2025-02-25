@@ -234,6 +234,15 @@ def merge_data(source_directory, data_params=None):
     # Read master file
     master_df = read_csv_or_excel(master_file)
 
+    if force_single:
+        # Combine master’s first + last into full name
+        combine_first_last_into_full(master_df, create_if_missing=True)
+
+        # Remove "First Name" and "Last Name" columns from the master
+        to_remove = [col for col in master_df.columns if unify_column_name(col) in ["first_name", "last_name"]]
+        if to_remove:
+            master_df.drop(columns=to_remove, inplace=True)
+
     # Determine initial name handling strategy based on master file
     master_has_full = any(unify_column_name(col) == "full_name" for col in master_df.columns)
     master_has_split = any(unify_column_name(col) == "first_name" for col in master_df.columns) or any(
