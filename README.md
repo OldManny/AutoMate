@@ -172,11 +172,11 @@ The **Data** module automates CSV/Excel operations via two actions:
   - Copy the master file’s contents to one or more target files, syncing columns as needed.
   - Existing columns in each target file remain intact, and only matching columns get updated with master data. Empty targets inherit the master’s columns.
 
-  This allows flexible usage:
+This allows flexible usage:
 
-      - To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
-      - To **import everything**, use an empty file so all columns from the sources are included.
-      - All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
+  - To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
+  - To **import everything**, use an empty file so all columns from the sources are included.
+  - All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
 
   **Undo**
   - Each merge or mirror allows to revert the master or target files to their pre‐operation state by using the **Undo** button.
