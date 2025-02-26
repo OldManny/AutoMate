@@ -144,8 +144,7 @@ class EmailView(QWidget):
             self.body_widget.clear_body()
 
         except Exception as e:
-            print("Failed to send email:", e)
-            self.toast.show_message(f"Failed to send: {e}", "error")
+            self.toast.show_message(str(e), "error")
 
     def open_schedule_modal(self):
         """Opens the Schedule Modal Window for setting email schedules."""

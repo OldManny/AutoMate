@@ -103,7 +103,6 @@ def test_send_email_failure(monkeypatch):
     """
     setup_env()
     monkeypatch.setattr("requests.post", fake_post_failure)  # Patch requests.post
-
     with pytest.raises(Exception) as exc_info:
         send_email_via_mailgun(
             from_address="sender@example.com",
@@ -111,7 +110,6 @@ def test_send_email_failure(monkeypatch):
             subject="Test Subject",
             body_text="This is a test email."
         )
-
-    assert "Mailgun send failed" in str(exc_info.value)  # Validate error message
-
+    # Update the assertion to check for the new error message format
+    assert "Mailgun error" in str(exc_info.value) or "Bad Request" in str(exc_info.value)
     teardown_env()
