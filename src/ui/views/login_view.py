@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QLineEdit, QVBoxLayo
 from src.ui.components.components import create_button
 from src.ui.components.toast_notification import ToastNotification
 from src.ui.style import BLUE_BUTTON_STYLE, INPUT_FIELDS_STYLE, MAIN_WINDOW_STYLE
-from src.utils.auth import generate_remember_me_token, register_user, verify_user
+from src.utils.auth import generate_remember_me_token, load_user_data, register_user, verify_user
 
 EMAIL_REGEX = r'^[^@]+@[^@]+\.[^@]+$'
 
@@ -45,6 +45,10 @@ class LoginView(QWidget):
         # Build the two modes
         self.init_login_ui()
         self.init_register_ui()
+
+        data = load_user_data()
+        if len(data["users"]) >= 1:
+            self.register_link.hide()  # Hide if already has an account
 
         # Add them to the outer layout (filling the space)
         self.outer_layout.addWidget(self.login_widget)
@@ -207,6 +211,10 @@ class LoginView(QWidget):
         '''
         Load the register mode
         '''
+        data = load_user_data()
+        if len(data["users"]) >= 1:
+            self.toast.show_message("An account already exists on this machine", "error")
+            return
         self.current_mode = "register"
         self.setup_login_mode()
 
@@ -265,9 +273,7 @@ class LoginView(QWidget):
 
         # Attempt registration
         success = register_user(email, password)
-        if not success:
-            self.toast.show_message("User already exists", "error")
-        else:
+        if success:
             self.toast.show_message("Registration successful! Please log in", "info")
             self.email_input_login.setText(email)
             self.password_input_login.setText("")
