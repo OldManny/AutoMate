@@ -5,53 +5,8 @@ import shutil
 
 import pandas as pd
 
+from src.utils.column_mappings import SYNONYMS
 from src.utils.undo_manager import clear_previous_log, log_operation
-
-# Dictionary of column synonyms to standardize naming conventions.
-SYNONYMS = {
-    "first_name": ["first name", "given name", "fname"],
-    "last_name": ["last name", "surname", "family name", "lname"],
-    "full_name": ["full name", "complete name", "name"],
-    "age": ["age", "years old", "dob (year)"],
-    "email": ["email", "email address", "e-mail", "user email"],
-    "phone": ["phone number", "phone", "mobile", "cell", "contact number"],
-    "address": ["address", "street address", "mailing address", "residence"],
-    "city": ["city", "town", "location"],
-    "state": ["state", "province", "region"],
-    "postal_code": ["postal code", "zip code", "zip", "postcode"],
-    "gender": ["gender", "sex", "identity"],
-    "company": ["company", "employer", "business name", "organization"],
-    "country": ["country", "nation", "nationality"],
-    "dob": ["dob", "birthdate", "birthday", "date of birth"],
-    "department": ["department", "dept", "division"],
-    "job_title": ["job title", "position", "occupation", "role"],
-    "marital_status": ["marital status", "family status", "relationship status"],
-    "username": ["username", "login name", "user id", "userid"],
-    "id": ["id", "identifier", "record id"],
-}
-
-# Mappings for display names when presenting standardized column names.
-DISPLAY_NAMES = {
-    "first_name": "First Name",
-    "last_name": "Last Name",
-    "full_name": "Full Name",
-    "age": "Age",
-    "email": "Email",
-    "phone": "Phone",
-    "address": "Address",
-    "city": "City",
-    "state": "State",
-    "postal_code": "Postal Code",
-    "gender": "Gender",
-    "company": "Company",
-    "country": "Country",
-    "dob": "DOB",
-    "department": "Department",
-    "job_title": "Job Title",
-    "marital_status": "Marital Status",
-    "username": "Username",
-    "id": "ID",
-}
 
 # Define a log file for data operations
 LOG_FILE = "operation_log.json"
