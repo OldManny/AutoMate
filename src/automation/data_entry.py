@@ -163,6 +163,26 @@ def write_csv_or_excel(df: pd.DataFrame, path: str):
         df.to_excel(path, index=False)
 
 
+def find_duplicates(df, matching_columns=None):
+    """Identifies duplicates using normalized string comparison."""
+
+    # Use all columns if none specified
+    if not matching_columns:
+        matching_columns = df.columns.tolist()
+
+    # Create normalized versions for comparison
+    normalized_df = df.copy()
+
+    for col in matching_columns:
+        if col in df.columns and df[col].dtype == 'object':  # String columns
+            normalized_df[col] = df[col].astype(str).str.lower().str.strip()
+
+    # Find duplicates using normalized values
+    dup_mask = normalized_df.duplicated(subset=matching_columns, keep=False)
+
+    return dup_mask
+
+
 def merge_data(source_directory, data_params=None):
     """Merges multiple data files while ensuring consistent name handling."""
     # Remove leftover backups from any previous operation
@@ -276,6 +296,10 @@ def merge_data(source_directory, data_params=None):
     # Ensure no NaN values
     master_df = master_df.fillna("")
 
+    # Remove duplicates and write back to file
+    dup_mask = find_duplicates(master_df)
+    master_df = master_df[~dup_mask]
+    master_df.drop_duplicates(inplace=True)
     write_csv_or_excel(master_df, master_file)
 
 
@@ -453,5 +477,7 @@ def mirror_data(source_directory, data_params=None):
             target_df = pd.concat([target_df, new_df], ignore_index=True)
 
         # Remove duplicates and write back to file
+        dup_mask = find_duplicates(target_df)
+        target_df = target_df[~dup_mask]
         target_df.drop_duplicates(inplace=True)
         write_csv_or_excel(target_df, target_file)
