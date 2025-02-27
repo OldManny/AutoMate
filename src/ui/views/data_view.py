@@ -153,6 +153,10 @@ class DataView(QWidget):
         self.mirror_radio = QRadioButton("Mirror")
         self.merge_radio.setChecked(True)
 
+        # Stylesheet to set the text color to white
+        self.merge_radio.setStyleSheet("QRadioButton { color: white; }")
+        self.mirror_radio.setStyleSheet("QRadioButton { color: white; }")
+
         group = QButtonGroup(self)
         group.addButton(self.merge_radio)
         group.addButton(self.mirror_radio)

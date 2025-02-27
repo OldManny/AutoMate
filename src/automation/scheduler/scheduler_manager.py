@@ -314,7 +314,6 @@ class SchedulerManager:
         Load (or reload) scheduled jobs from a JSON file into APScheduler.
         """
         if not os.path.exists(self.jobs_file):
-            logger.warning("No scheduled_jobs.json file found. Nothing to load.")
             return
 
         logger.info("Loading jobs from scheduled_jobs.json...")
