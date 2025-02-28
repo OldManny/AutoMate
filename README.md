@@ -162,25 +162,25 @@ If you wish to send the email at a future time (or have it repeat on certain day
 
 The **Data** module automates CSV/Excel operations via two actions:
 
-  **Merge**
-  - Combine data from multiple CSV/Excel files into one master file.
-  - If the master file already has columns (even if it has no rows), that structure is respected. The merge copies data only into the columns that match via synonyms, ignoring additional columns from the source files.
-  - If the master file is empty (no columns at all), all relevant columns from the source files are carried over.
-  - Name fields (“First/Last Name” vs. “Full Name”) are automatically handled. The application checks the master file’s existing name format: if it only has “Full Name,” incoming data is combined; if it only has split columns, incoming “Full Name” fields are split. It handles various column fields, not only Names.
+**Merge**
+- Combine data from multiple CSV/Excel files into one master file.
+- If the master file already has columns (even if it has no rows), that structure is respected. The merge copies data only into the columns that match via synonyms, ignoring additional columns from the source files.
+- If the master file is empty (no columns at all), all relevant columns from the source files are carried over.
+- Name fields ("First/Last Name" vs. "Full Name") are automatically handled. The application checks the master file's existing name format: if it only has "Full Name," incoming data is combined; if it only has split columns, incoming "Full Name" fields are split. It handles various column fields, not only Names.
+- Intelligent duplicate detection prevents redundant entries by normalizing data values (accounting for case and whitespace variations) before comparison.
 
-  **Mirror**
-  - Copy the master file’s contents to one or more target files, syncing columns as needed.
-  - Existing columns in each target file remain intact, and only matching columns get updated with master data. Empty targets inherit the master’s columns.
+**Mirror**
+- Copy the master file's contents to one or more target files, syncing columns as needed.
+- Existing columns in each target file remain intact, and only matching columns get updated with master data. Empty targets inherit the master's columns.
+- Duplicate prevention ensures target files remain clean by using the same approach as in the merge automation.
 
 This allows flexible usage:
+- To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
+- To **import everything**, use an empty file so all columns from the sources are included.
+- All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
 
-  - To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
-  - To **import everything**, use an empty file so all columns from the sources are included.
-  - All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
-
-  **Undo**
-  - Each merge or mirror allows to revert the master or target files to their pre‐operation state by using the **Undo** button.
-
+**Undo**
+- Each merge or mirror allows to revert the master or target files to their pre‐operation state by using the **Undo** button.
 
 ### Schedule
 
