@@ -37,7 +37,7 @@ class MainApp(QMainWindow):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)  # Disable maximize button
         self.setStyleSheet(MAIN_WINDOW_STYLE)
 
-        self.scheduler_manager = SchedulerManager()
+        self.scheduler_manager = SchedulerManager(start_scheduler=False)
 
         # Track the login state
         self.logged_in = False  # Will set to True once user logs in successfully

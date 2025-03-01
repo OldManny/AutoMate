@@ -21,7 +21,7 @@ def run_daemon():
     setup_temporary_logging()
 
     logger.info("Starting daemon process.")
-    manager = SchedulerManager()
+    manager = SchedulerManager(start_scheduler=True)
 
     # Set up watchdog event handler
     event_handler = JSONFileChangeHandler(manager)

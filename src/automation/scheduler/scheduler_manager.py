@@ -23,7 +23,7 @@ class SchedulerManager:
     storing jobs persistently in a JSON file.
     """
 
-    def __init__(self, jobs_file: str = "scheduled_jobs.json"):
+    def __init__(self, jobs_file: str = "scheduled_jobs.json", start_scheduler: bool = True):
         self.jobs_file = jobs_file
         self.job_metadata = {}
 
@@ -44,15 +44,19 @@ class SchedulerManager:
         self.scheduler.add_listener(self._job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED)
 
         # Start the scheduler
-        self.scheduler.start()
-        logger.info("Scheduler started with coalesce=True and misfire_grace_time=300.")
+        if start_scheduler:
+            self.scheduler.start()
+            logger.info("Scheduler started with coalesce=True and misfire_grace_time=300.")
+        else:
+            logger.info("Scheduler created but NOT started (start_scheduler=False).")
 
         # Load existing jobs
         self.load_jobs_from_file()
 
         # Start a background thread to detect wake-ups
-        wake_thread = threading.Thread(target=self._detect_wake_up, daemon=True)
-        wake_thread.start()
+        if start_scheduler:
+            wake_thread = threading.Thread(target=self._detect_wake_up, daemon=True)
+            wake_thread.start()
 
     def _detect_wake_up(self):
         """
@@ -262,11 +266,12 @@ class SchedulerManager:
 
         # Decide how to add the job
         if task_type == "send_email":
-            attachments = email_params.get("attachments", [])
-            # Copy them in a temp folders
-            persisted_paths = self._persist_attachments(job_id, attachments)
-            # Update the email_params with the new permanent paths
-            email_params["attachments"] = persisted_paths
+            # Copy attachments in temp folder
+            if persist:
+                attachments = email_params.get("attachments", [])
+                persisted_paths = self._persist_attachments(job_id, attachments)
+                # Update the email_params with the new permanent paths
+                email_params["attachments"] = persisted_paths
 
             self.scheduler.add_job(
                 func=task_callable,
@@ -282,6 +287,7 @@ class SchedulerManager:
                 },
                 replace_existing=True,
             )
+
         elif task_type in ("merge_data", "mirror_data"):
             self.scheduler.add_job(
                 func=TASK_FUNCTIONS[task_type],
@@ -413,5 +419,8 @@ class SchedulerManager:
         """
         Shut down the APScheduler instance.
         """
-        logger.info("Shutting down scheduler.")
-        self.scheduler.shutdown(wait=False)
+        if self.scheduler is not None and self.scheduler.running:
+            logger.info("Shutting down scheduler.")
+            self.scheduler.shutdown(wait=False)
+        else:
+            logger.info("Scheduler is not running, skipping shutdown.")
