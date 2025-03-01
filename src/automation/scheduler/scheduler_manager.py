@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import json
 import logging
 import os
+import shutil
 import threading
 import time
 
@@ -88,7 +89,6 @@ class SchedulerManager:
 
         elif event.code == EVENT_JOB_MISSED:
             logger.warning(f"Job {event.job_id} was missed.")
-            # OPTIONAL: Implement rescheduling the job or notify via email
 
         elif event.code == EVENT_JOB_EXECUTED:
             job_data = self._get_job_from_file(event.job_id)
@@ -96,6 +96,9 @@ class SchedulerManager:
             if job_data and not job_data.get('recurring_days', []):
                 self._cleanup_json_file(event.job_id)
                 logger.info(f"One-time job {event.job_id} has been executed and removed from JSON.")
+
+                # Clean up attachments for one time jobs
+                self._cleanup_attachments(job_data)
 
         else:
             logger.debug(f"Unhandled event code: {event.code} for job {event.job_id}")
@@ -134,6 +137,49 @@ class SchedulerManager:
                     logger.info(f"Job {job_id} removed from scheduled_jobs.json.")
         except Exception as e:
             logger.error(f"Error removing job {job_id} from JSON: {e}")
+
+    def _persist_attachments(self, job_id, attachments):
+        """
+        Copies each attachment into a dedicated folder to ensure they remain available
+        when APScheduler runs the job in the future.
+        """
+        if not attachments:
+            return []
+
+        base_dir = "scheduled_attachments"
+        os.makedirs(base_dir, exist_ok=True)
+
+        new_paths = []
+        for original_path in attachments:
+            if not os.path.isfile(original_path):
+                logger.warning(f"Attachment {original_path} does not exist or is not accessible.")
+                continue
+
+            # Prevent filename collisions by prefixing with job_id
+            filename = os.path.basename(original_path)
+            new_filename = f"{job_id}_{filename}"
+            new_path = os.path.join(base_dir, new_filename)
+
+            try:
+                shutil.copyfile(original_path, new_path)
+                new_paths.append(new_path)
+                logger.info(f"Copied attachment '{original_path}' -> '{new_path}'")
+            except Exception as e:
+                logger.error(f"Failed to copy attachment '{original_path}': {e}")
+
+        return new_paths
+
+    def _cleanup_attachments(self, job_data):
+        """
+        Removes attachments from storage after a one-time email job has been executed.
+        """
+        attachments = job_data.get("email_params", {}).get("attachments", [])
+        for path in attachments:
+            try:
+                os.remove(path)
+                logger.info(f"Removed attachment file: {path}")
+            except Exception as e:
+                logger.warning(f"Could not remove {path}: {e}")
 
     def add_scheduled_job(
         self, task_type, folder_target, run_time, recurring_days=None, job_id=None, email_params=None, data_params=None
@@ -216,6 +262,12 @@ class SchedulerManager:
 
         # Decide how to add the job
         if task_type == "send_email":
+            attachments = email_params.get("attachments", [])
+            # Copy them in a temp folders
+            persisted_paths = self._persist_attachments(job_id, attachments)
+            # Update the email_params with the new permanent paths
+            email_params["attachments"] = persisted_paths
+
             self.scheduler.add_job(
                 func=task_callable,
                 trigger=trigger,
