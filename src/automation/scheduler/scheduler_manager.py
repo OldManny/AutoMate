@@ -353,13 +353,30 @@ class SchedulerManager:
                 # For file jobs, get the source directory
                 target = metadata.get("folder_target") or job.kwargs.get("source_directory", "-")
 
+            # Get the next run time
+            next_run = None
+            try:
+                job_info = self.scheduler._job_stores['default'].get_job(job.id)
+                if job_info and hasattr(job_info, 'next_run_time'):
+                    next_run = str(job_info.next_run_time) if job_info.next_run_time else None
+            except Exception:
+                try:
+                    now = datetime.now()
+                    # Get next fire time from trigger
+                    next_time = job.trigger.get_next_fire_time(None, now)
+                    if next_time:
+                        next_run = str(next_time)
+                except Exception:
+                    # If all else fails, use trigger string to indicate schedule
+                    next_run = f"According to: {str(job.trigger)}"
+
             jobs_data.append(
                 {
                     "job_id": job.id,
                     "task_type": task_type,
                     "folder_target": target,
                     "trigger": str(job.trigger),
-                    "next_run_time": str(job.next_run_time) if job.next_run_time else None,
+                    "next_run_time": next_run,
                     "recurring_days": metadata.get("recurring_days", []),
                 }
             )
@@ -406,9 +423,19 @@ class SchedulerManager:
     def remove_scheduled_job(self, job_id):
         """
         Remove a job from both the scheduler and JSON file.
+        Also cleans up any attachments associated with the job.
         """
         logger.info(f"Removing scheduled job {job_id}.")
+
+        # Get job data before removing it from JSON
+        job_data = self._get_job_from_file(job_id)
         self._cleanup_json_file(job_id)
+
+        # Clean up any attachments if this was an email job
+        if job_data and "email_params" in job_data:
+            self._cleanup_attachments(job_data)
+
+        # Remove from scheduler
         try:
             self.scheduler.remove_job(job_id)
             logger.info(f"Job {job_id} removed from scheduler.")
