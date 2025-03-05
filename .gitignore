@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 ToDo.txt
+scheduled_attachments/
 
 # Json file for CRON automation
 scheduled_jobs.json

@@ -209,8 +209,45 @@ def merge_data(source_directory, data_params=None):
     # Read master file
     master_df = read_csv_or_excel(master_file)
 
-    if force_single:
-        # Combine master’s first + last into full name
+    # Check if master is empty
+    master_is_empty = master_df.empty
+
+    # If master is empty, initialize it from the first non-empty file
+    if master_is_empty and other_files:
+        # Find first non-empty file to use as template
+        for template_file in other_files:
+            if os.path.isfile(template_file):
+                template_df = read_csv_or_excel(template_file)
+                if not template_df.empty:
+                    # Use the exact column names from the template file
+                    master_df = template_df.copy()
+
+                    # Apply column mapping if specified
+                    if column_map and template_file in column_map:
+                        master_df.rename(columns=column_map[template_file], inplace=True)
+
+                    # Handle name columns according to force_single setting
+                    if force_single:
+                        # Process according to force_single rules
+                        if any(unify_column_name(col) in ["first_name", "last_name"] for col in master_df.columns):
+                            combine_first_last_into_full(master_df, create_if_missing=True)
+                            # Remove first/last name columns
+                            to_remove = [
+                                col
+                                for col in master_df.columns
+                                if unify_column_name(col) in ["first_name", "last_name"]
+                            ]
+                            if to_remove:
+                                master_df.drop(columns=to_remove, inplace=True)
+                    break
+
+    if master_is_empty and master_df.empty:
+        # If still empty (no valid template found), create minimal structure with proper case
+        master_df = pd.DataFrame(columns=["Full Name"] if force_single else ["First Name", "Last Name"])
+
+    # From here, proceed with normal processing for non-empty master
+    if force_single and not master_df.empty:
+        # Combine master's first + last into full name
         combine_first_last_into_full(master_df, create_if_missing=True)
 
         # Remove "First Name" and "Last Name" columns from the master
@@ -230,9 +267,17 @@ def merge_data(source_directory, data_params=None):
         unified = unify_column_name(col)
         master_mapping[unified] = col
 
+    # Track processed files
+    processed_files = set()
+
     # Process each additional file
     for f in other_files:
         if not os.path.isfile(f):
+            continue
+
+        if master_is_empty and f == other_files[0] and len(processed_files) == 0:
+            # Skip re-processing the template file we already incorporated
+            processed_files.add(f)
             continue
 
         incoming_df = read_csv_or_excel(f)
@@ -279,6 +324,14 @@ def merge_data(source_directory, data_params=None):
         if col_mapping:
             incoming_df.rename(columns=col_mapping, inplace=True)
 
+        # Check for new columns to add to master
+        for col in incoming_df.columns:
+            unified = unify_column_name(col)
+            if unified not in master_mapping:
+                # This is a new column - add it to master with original formatting
+                master_df[col] = ""
+                master_mapping[unified] = col
+
         # Add new columns from master if they don't exist in incoming
         for mcol in master_df.columns:
             if mcol not in incoming_df.columns:
@@ -289,6 +342,7 @@ def merge_data(source_directory, data_params=None):
 
         # Concatenate dataframes efficiently
         master_df = pd.concat([master_df, incoming_df], ignore_index=True)
+        processed_files.add(f)
 
     # Final processing
     master_df.drop_duplicates(inplace=True)
@@ -297,8 +351,15 @@ def merge_data(source_directory, data_params=None):
     master_df = master_df.fillna("")
 
     # Remove duplicates and write back to file
-    dup_mask = find_duplicates(master_df)
-    master_df = master_df[~dup_mask]
+    if not master_df.empty:
+        try:
+            dup_mask = find_duplicates(master_df)
+            if len(dup_mask) == len(master_df):
+                master_df = master_df[~dup_mask]
+        except Exception as e:
+            print(f"Warning: Error during duplicate removal: {e}")
+            # Continue without removing duplicates if there's an error
+
     master_df.drop_duplicates(inplace=True)
     write_csv_or_excel(master_df, master_file)
 
