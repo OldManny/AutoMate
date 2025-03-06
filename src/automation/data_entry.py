@@ -222,13 +222,12 @@ def merge_data(source_directory, data_params=None):
                     # Use the exact column names from the template file
                     master_df = template_df.copy()
 
-                    # Apply column mapping if specified
+                    # Apply column mapping
                     if column_map and template_file in column_map:
                         master_df.rename(columns=column_map[template_file], inplace=True)
 
-                    # Handle name columns according to force_single setting
+                    # Handle name columns
                     if force_single:
-                        # Process according to force_single rules
                         if any(unify_column_name(col) in ["first_name", "last_name"] for col in master_df.columns):
                             combine_first_last_into_full(master_df, create_if_missing=True)
                             # Remove first/last name columns
@@ -245,7 +244,7 @@ def merge_data(source_directory, data_params=None):
         # If still empty (no valid template found), create minimal structure with proper case
         master_df = pd.DataFrame(columns=["Full Name"] if force_single else ["First Name", "Last Name"])
 
-    # From here, proceed with normal processing for non-empty master
+    # Proceed for non-empty master
     if force_single and not master_df.empty:
         # Combine master's first + last into full name
         combine_first_last_into_full(master_df, create_if_missing=True)
@@ -276,7 +275,7 @@ def merge_data(source_directory, data_params=None):
             continue
 
         if master_is_empty and f == other_files[0] and len(processed_files) == 0:
-            # Skip re-processing the template file we already incorporated
+            # Skip re-processing the template file already incorporated
             processed_files.add(f)
             continue
 

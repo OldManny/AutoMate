@@ -343,6 +343,12 @@ class SchedulerManager:
             # Get metadata for the job
             metadata = self.job_metadata.get(job.id, {})
             task_type = metadata.get("task_type")
+            recurring_days = metadata.get("recurring_days", [])
+
+            # For one-time jobs, check if they are still in the JSON file. If not, skip them
+            if not recurring_days:
+                if self._get_job_from_file(job.id) is None:
+                    continue
 
             # Determine the target based on job type
             if task_type == "send_email":
