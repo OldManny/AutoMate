@@ -159,12 +159,25 @@ class RunningJobsModal(BaseModalWindow):
 
     def populate_jobs(self):
         """Populate the job list with rows for each scheduled job."""
+        # Clear existing job rows
         for i in reversed(range(self.jobs_container_layout.count())):
             widget = self.jobs_container_layout.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
 
         jobs = self.scheduler_manager.list_scheduled_jobs()
+
+        # Sort jobs by next_run_time (earliest first).
+        def parse_next_run(job):
+            time_str = job.get('next_run_time')
+            try:
+                return datetime.fromisoformat(time_str) if time_str else datetime.max
+            except Exception:
+                return datetime.max
+
+        jobs.sort(key=parse_next_run)
+
+        # Populate job rows in sorted order
         for row_index, job_info in enumerate(jobs):
             row_widget = self.create_job_row(job_info, row_index)
             self.jobs_container_layout.addWidget(row_widget)
