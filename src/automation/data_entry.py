@@ -538,6 +538,11 @@ def mirror_data(source_directory, data_params=None):
 
         # Remove duplicates and write back to file
         dup_mask = find_duplicates(target_df)
-        target_df = target_df[~dup_mask]
-        target_df.drop_duplicates(inplace=True)
+        dup_mask = find_duplicates(target_df)
+        if dup_mask.all():
+            # If every row is flagged as duplicate keep one instance per duplicate group
+            target_df.drop_duplicates(inplace=True)
+        else:
+            target_df = target_df[~dup_mask]
+            target_df.drop_duplicates(inplace=True)
         write_csv_or_excel(target_df, target_file)
