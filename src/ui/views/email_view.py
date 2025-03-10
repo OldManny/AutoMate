@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
-from src.automation.email_sender import send_email_via_mailgun
+from src.automation.email_sender import is_valid_email, send_email_via_mailgun
 from src.ui.components.components import create_button, create_card, create_separator
 from src.ui.components.email_body import BodyWidget
 from src.ui.components.toast_notification import ToastNotification
@@ -147,11 +147,29 @@ class EmailView(QWidget):
             self.toast.show_message(str(e), "error")
 
     def open_schedule_modal(self):
-        """Opens the Schedule Modal Window for setting email schedules."""
-        if not self.to_input.text().strip() or not self.from_input.text().strip():
+        """Opens the Schedule Modal Window for setting email schedules,
+        only if the email formats for both 'To' and 'From' are valid."""
+        to_text = self.to_input.text().strip()
+        from_text = self.from_input.text().strip()
+
+        # Check that both fields are provided
+        if not to_text or not from_text:
             self.toast.show_message("Specify 'To' and 'From'", "info")
             return
 
+        # Validate the 'From' email format
+        if not is_valid_email(from_text):
+            self.toast.show_message(f"Invalid email: {from_text}", "error")
+            return
+
+        # Validate each email in the 'To' field (handle multiple addresses)
+        to_addresses = [addr.strip() for addr in to_text.split(',') if addr.strip()]
+        for addr in to_addresses:
+            if not is_valid_email(addr):
+                self.toast.show_message(f"Invalid email: {addr}", "error")
+                return
+
+        # If validation passes, open the schedule modal
         schedule_modal = ScheduleModalWindow(self)
         schedule_modal.schedule_saved.connect(self.on_schedule_saved)
         schedule_modal.schedule_canceled.connect(self.on_schedule_canceled)
