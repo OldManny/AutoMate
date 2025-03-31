@@ -10,6 +10,7 @@ from src.ui.components.email_body import BodyWidget
 from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
+from src.utils.resources import resource_path
 
 
 class EmailView(QWidget):
@@ -42,7 +43,8 @@ class EmailView(QWidget):
 
         # Email icon for the header
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/email.png")
+        icon_path_absolute = resource_path("assets/icons/email.png")  # Header icon
+        icon_pixmap = QPixmap(icon_path_absolute)
         icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)

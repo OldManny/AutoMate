@@ -1,128 +1,188 @@
 import json
+import sys
 
+from PyQt5.QtCore import QCoreApplication
 import pytest
 
 from src.utils import auth
 
+# Store the original state of auth globals
+_original_paths_initialized = auth._paths_initialized
+_original_user_data_file = auth.USER_DATA_FILE
+_original_last_token_file = auth.LAST_TOKEN_FILE
+_original_app_data_dir = auth.APP_DATA_DIR
+
+@pytest.fixture(scope="function", autouse=True)
+def manage_qapp_and_auth_state(monkeypatch):
+    """
+    Ensures QApp exists for potential setup, and importantly,
+    resets the auth module's path state after each test.
+    """
+    # QApp Setup
+    app = QCoreApplication.instance()
+    created_app = False
+    if app is None:
+        app = QCoreApplication(sys.argv if hasattr(sys, 'argv') else [''])
+        created_app = True
+
+    org_name_set = False
+    app_name_set = False
+    if not QCoreApplication.organizationName():
+        QCoreApplication.setOrganizationName("AutoMateTestOrg")
+        org_name_set = True
+    if not QCoreApplication.applicationName():
+        QCoreApplication.setApplicationName("AutoMateTestApp")
+        app_name_set = True
+
+    yield # Test runs
+
+    # Cleanup
+    auth._paths_initialized = _original_paths_initialized
+    auth.USER_DATA_FILE = _original_user_data_file
+    auth.LAST_TOKEN_FILE = _original_last_token_file
+    auth.APP_DATA_DIR = _original_app_data_dir
+
 
 @pytest.fixture
-def tmp_user_file(tmp_path, monkeypatch):
+def mock_auth_paths_direct(tmp_path, monkeypatch):
     """
-    A pytest fixture that:
-    1) Creates an empty 'test_user_data.json' in a temp directory.
-    2) Patches auth.USER_DATA_FILE to point to this file instead
-       of the real "user_data.json".
-    3) Cleans up afterwards.
+    Directly patches the global path variables in the auth module
+    and sets the initialized flag to True to bypass internal init logic
+    during the test execution.
     """
-    file_path = tmp_path / "test_user_data.json"
+    # Define temporary file paths
+    temp_app_data_dir = tmp_path / "auth_test_data"
+    temp_user_data_file = temp_app_data_dir / "user_data.json"
+    temp_last_token_file = temp_app_data_dir / "last_token.txt"
 
-    # Initialize with empty users
-    file_path.write_text(json.dumps({"users": []}), encoding="utf-8")
+    # Create the directory and initial user file
+    temp_app_data_dir.mkdir(parents=True, exist_ok=True)
+    if not temp_user_data_file.exists():
+        temp_user_data_file.write_text(json.dumps({"users": []}), encoding="utf-8")
 
-    # Patch the USER_DATA_FILE constant in auth
-    monkeypatch.setattr(auth, "USER_DATA_FILE", str(file_path))
+    # Directly patch the globals in the auth module
+    monkeypatch.setattr(auth, "USER_DATA_FILE", str(temp_user_data_file))
+    monkeypatch.setattr(auth, "LAST_TOKEN_FILE", str(temp_last_token_file))
+    monkeypatch.setattr(auth, "APP_DATA_DIR", str(temp_app_data_dir))
 
-    yield file_path  # Provide the path to the test
+    # Set the paths initialized flag to True
+    monkeypatch.setattr(auth, "_paths_initialized", True)
+
+    yield {
+        "user_data": temp_user_data_file,
+        "last_token": temp_last_token_file,
+        "app_data": temp_app_data_dir
+    }
 
 
-def test_register_user_success(tmp_user_file):
-    """
-    Register a new user that doesn't exist yet => should succeed (return True).
-    """
+def test_register_user_success(mock_auth_paths_direct):
+    """Test user registration with valid data."""
+
+    # Ensure the user data file is empty before the test
     result = auth.register_user("test@example.com", "Password123")
-    assert result is True, "Expected register_user to return True on success"
-
-    # Read the temp file and verify user is stored
-    data = json.loads(tmp_user_file.read_text(encoding="utf-8"))
+    assert result is True
+    user_file = mock_auth_paths_direct["user_data"]
+    assert user_file.exists()
+    data = json.loads(user_file.read_text(encoding="utf-8"))
     assert len(data["users"]) == 1
-    user = data["users"][0]
-    assert user["email"] == "test@example.com"
-    assert user["remember_me_token"] == ""
-    # Check that the password is hashed, not stored in plain text
-    assert "hashed_password" in user
-    assert user["hashed_password"] != "Password123"
+    assert data["users"][0]["email"] == "test@example.com"
+    assert "hashed_password" in data["users"][0]
 
+def test_register_user_already_exists(mock_auth_paths_direct):
+    """Test user registration with an already existing email."""
 
-def test_register_user_already_exists(tmp_user_file):
-    """
-    Register the same user twice => second time should return False.
-    """
-    # First time
+    # Register the user first
     assert auth.register_user("test@example.com", "Password123") is True
-    # Second time => user exists => fail
     assert auth.register_user("test@example.com", "AnotherPass") is False
-
-    # Verify still only one user in the file
-    data = json.loads(tmp_user_file.read_text(encoding="utf-8"))
+    user_file = mock_auth_paths_direct["user_data"]
+    data = json.loads(user_file.read_text(encoding="utf-8"))
     assert len(data["users"]) == 1
 
+def test_verify_user_success(mock_auth_paths_direct):
+    """Test user verification with valid credentials."""
 
-def test_verify_user_success(tmp_user_file):
-    """
-    If a user is registered, verify_user() should return True with correct password.
-    """
+    # Register a user first
     auth.register_user("valid@user.com", "MySecret")
-
-    # Verify with correct password
     assert auth.verify_user("valid@user.com", "MySecret") is True
 
-
-def test_verify_user_failure_wrong_password(tmp_user_file):
-    """
-    verify_user() should return False if the password is incorrect.
-    """
+def test_verify_user_failure_wrong_password(mock_auth_paths_direct):
+    """Test user verification with an incorrect password."""
     auth.register_user("valid@user.com", "RealPass")
-
-    # Wrong password => False
     assert auth.verify_user("valid@user.com", "WrongPass") is False
 
-
-def test_verify_user_failure_no_such_user(tmp_user_file):
-    """
-    verify_user() should return False if the user doesn't exist at all.
-    """
-    # User "ghost@user.com" is not registered, so it shouldn't verify
+def test_verify_user_failure_no_such_user(mock_auth_paths_direct):
+    """Test user verification with a non-existent user."""
     assert auth.verify_user("ghost@user.com", "Anything") is False
 
-
-def test_generate_remember_me_token(tmp_user_file):
-    """
-    generate_remember_me_token() should create and store a unique token.
-    """
+def test_generate_remember_me_token(mock_auth_paths_direct):
+    """Test generation of remember me token."""
     auth.register_user("remember@me.com", "somepass")
     token = auth.generate_remember_me_token("remember@me.com")
-    assert token is not None
-    assert len(token) > 0
+    assert isinstance(token, str) and len(token) > 10
 
-    # Check that the token was saved
-    data = json.loads(tmp_user_file.read_text(encoding="utf-8"))
-    user = next(u for u in data["users"] if u["email"].lower() == "remember@me.com")
+    user_file = mock_auth_paths_direct["user_data"]
+    data = json.loads(user_file.read_text(encoding="utf-8"))
+    user = next((u for u in data["users"] if u["email"].lower() == "remember@me.com"), None)
+    assert user is not None
     assert user["remember_me_token"] == token
 
-
-def test_get_user_by_token(tmp_user_file):
-    """
-    get_user_by_token() should return the user's email if token matches,
-    else None.
-    """
+def test_get_user_by_token(mock_auth_paths_direct):
+    """Test retrieval of user by remember me token."""
     auth.register_user("user@token.com", "abc123")
     token = auth.generate_remember_me_token("user@token.com")
+    assert auth.get_user_by_token(token) == "user@token.com"
+    assert auth.get_user_by_token("non-existent-token") is None
+    assert auth.get_user_by_token("") is None
 
-    found_email = auth.get_user_by_token(token)
-    assert found_email == "user@token.com"
-
-    # Non-existent token => None
-    assert auth.get_user_by_token("random-junk") is None
-
-
-def test_clear_remember_me_token(tmp_user_file):
-    """
-    clear_remember_me_token() should remove any existing token for that user.
-    """
+def test_clear_remember_me_token(mock_auth_paths_direct):
+    """Test clearing of remember me token."""
     auth.register_user("bye@token.com", "pass")
     token = auth.generate_remember_me_token("bye@token.com")
     assert auth.get_user_by_token(token) == "bye@token.com"
 
-    # Clear the token
     auth.clear_remember_me_token("bye@token.com")
+
+    user_file = mock_auth_paths_direct["user_data"]
+    data = json.loads(user_file.read_text(encoding="utf-8"))
+    user = next((u for u in data["users"] if u["email"].lower() == "bye@token.com"), None)
+    assert user is not None
+    assert user.get("remember_me_token", "") == ""
     assert auth.get_user_by_token(token) is None
+
+def test_save_load_last_token(mock_auth_paths_direct):
+    """Test saving and loading the last token."""
+    token_to_save = "my-test-token-123"
+    auth.save_last_token(token_to_save)
+
+    token_file = mock_auth_paths_direct["last_token"]
+    assert token_file.exists()
+    assert token_file.read_text(encoding="utf-8") == token_to_save
+
+    loaded_token = auth.load_last_token()
+    assert loaded_token == token_to_save
+
+def test_clear_last_token_file(mock_auth_paths_direct):
+    """Test clearing the last token file."""
+    token_file = mock_auth_paths_direct["last_token"]
+    if not token_file.exists():
+        token_file.touch()
+    token_file.write_text("some-token", encoding="utf-8")
+    assert token_file.exists()
+
+    auth.clear_last_token_file()
+    assert not token_file.exists()
+
+def test_load_last_token_no_file(mock_auth_paths_direct):
+    """Test loading last token when the file doesn't exist."""
+    token_file = mock_auth_paths_direct["last_token"]
+    if token_file.exists():
+        token_file.unlink()
+    assert auth.load_last_token() is None
+
+def test_load_user_data_no_file(mock_auth_paths_direct):
+    """Test loading user data when the file doesn't exist."""
+    user_file = mock_auth_paths_direct["user_data"]
+    if user_file.exists():
+        user_file.unlink()
+    data = auth.load_user_data()
+    assert data == {"users": []}

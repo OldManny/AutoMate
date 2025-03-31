@@ -3,9 +3,26 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 import zipfile
 
-LOG_FILE = "operation_log.json"
+from src.utils import undo_manager
+
+
+def _write_log(log_data, function_name):
+    """Internal helper to write log data, ensuring path is used."""
+    log_file_path = undo_manager.LOG_FILE
+    if not log_file_path:
+        print(f"ERROR: LOG_FILE path not configured in undo_manager for {function_name}", file=sys.stderr)
+        raise RuntimeError(f"Operation log path not configured for {function_name}.")
+    try:
+        os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+        with open(log_file_path, "w") as log_file:
+            json.dump(log_data, log_file)
+        print(f"[DEBUG {function_name}] Successfully wrote log to {log_file_path}")
+    except Exception as e:
+        print(f"Error writing operation log to {log_file_path} in {function_name}: {e}", file=sys.stderr)
+        raise  # Re-raise the exception
 
 
 def sort_by_type(source_directory, **kwargs):
@@ -52,11 +69,11 @@ def sort_by_type(source_directory, **kwargs):
                     operation_log.append({"original": file_path, "new": new_path})
                     break
 
-    # Save the operation log to a JSON file
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "folders": list(folders_created)}, log_file)
+        log_data = {"operations": operation_log, "folders": list(folders_created)}
+        _write_log(log_data, "sort_by_type")
     else:
+        # Raise error only if nothing was moved/logged
         raise ValueError("Nothing to undo")
 
 
@@ -106,10 +123,9 @@ def sort_by_date(source_directory, **kwargs):
                 # Log the operation
                 operation_log.append({"original": file_path, "new": new_path})
 
-    # Write the operation log to a JSON file
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "folders": list(folders_to_create)}, log_file)
+        log_data = {"operations": operation_log, "folders": list(folders_to_create)}
+        _write_log(log_data, "sort_by_date")
     else:
         raise ValueError("Nothing to undo")
 
@@ -169,10 +185,10 @@ def sort_by_size(source_directory, **kwargs):
                 # Log the operation for Undo functionality
                 operation_log.append({"original": file_path, "new": new_path})
 
-    # Write the operation log to a JSON file
+    # Save the operation log to a JSON file
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "folders": list(folders_to_create)}, log_file)
+        log_data = {"operations": operation_log, "folders": list(folders_to_create)}
+        _write_log(log_data, "sort_by_size")
     else:
         raise ValueError("Nothing to undo")
 
@@ -191,8 +207,10 @@ def detect_duplicates(source_directory, **kwargs):
     file_hashes = {}
     operation_log = []  # Log of moved files
     duplicates_folder = os.path.join(source_directory, "duplicates")
+    duplicates_folder_created = False
 
     for root, _, files in os.walk(source_directory, topdown=True):
+        # Skip hidden files
         for file in files:
             if file.startswith("."):  # Skip hidden files
                 continue
@@ -217,8 +235,9 @@ def detect_duplicates(source_directory, **kwargs):
 
     # Write the operation log to a JSON file
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "folders": [duplicates_folder]}, log_file)
+        # Pass folder only if created *by this operation* for undo cleanup
+        log_data = {"operations": operation_log, "folders": [duplicates_folder] if duplicates_folder_created else []}
+        _write_log(log_data, "detect_duplicates")
     else:
         raise ValueError("Nothing to undo")
 
@@ -274,8 +293,8 @@ def rename_files(source_directory, **kwargs):
 
     # Write the operation log to a JSON file
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log}, log_file)
+        log_data = {"operations": operation_log}  # No folders created here
+        _write_log(log_data, "rename_files")
     else:
         raise ValueError("Nothing to undo")
 
@@ -316,10 +335,9 @@ def compress_files(source_directory, **kwargs):
     # Log the operation
     log_data = {
         "compressed_archive": archive_name,
-        "file_timestamps": file_timestamps,  # Log timestamps for restoration
+        "file_timestamps": file_timestamps,
     }
-    with open(LOG_FILE, "w") as log_file:
-        json.dump(log_data, log_file)
+    _write_log(log_data, "compress_files")
 
 
 def backup_files(source_directory, **kwargs):
@@ -350,6 +368,7 @@ def backup_files(source_directory, **kwargs):
     os.makedirs(backup_folder, exist_ok=True)
 
     operation_log = []  # Log individual file backups
+    backup_folder_created = True  # Track creation
 
     # Traverse and copy files to the backup folder
     for root, dirs, files in os.walk(source_directory):
@@ -371,9 +390,8 @@ def backup_files(source_directory, **kwargs):
             # Log the backup operation
             operation_log.append({"original": source_file, "new": target_file})
 
-    # Save the operation log
     if operation_log:
-        with open(LOG_FILE, "w") as log_file:
-            json.dump({"operations": operation_log, "created_folder": backup_folder}, log_file)
+        log_data = {"operations": operation_log, "created_folder": backup_folder if backup_folder_created else None}
+        _write_log(log_data, "backup_files")
     else:
         raise ValueError("Nothing to undo")

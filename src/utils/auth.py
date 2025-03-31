@@ -1,36 +1,115 @@
 import json
 import os
+import sys
 from typing import Optional
 import uuid
 
+from PyQt5.QtCore import QCoreApplication, QStandardPaths
 import bcrypt
 
-# File where user data is stored
-USER_DATA_FILE = "user_data.json"
+USER_DATA_FILE = None
+LAST_TOKEN_FILE = None
+APP_DATA_DIR = None
+_paths_initialized = False  # Flag to prevent redundant checks
+
+
+def _initialize_auth_paths():
+    """Internal function to set auth paths if not already set."""
+    global USER_DATA_FILE, LAST_TOKEN_FILE, APP_DATA_DIR, _paths_initialized
+    if _paths_initialized:
+        return  # Already done
+
+    if not QCoreApplication.instance():
+        print("CRITICAL ERROR: No QCoreApplication instance found when initializing auth paths.", file=sys.stderr)
+        raise RuntimeError("QCoreApplication instance required for auth path initialization.")
+
+    if not QCoreApplication.organizationName() or not QCoreApplication.applicationName():
+        print("Warning: Org/App names not set before getting AppDataLocation in auth.", file=sys.stderr)
+        # Set defaults if not set by main script
+        QCoreApplication.setOrganizationName("AutoMate")
+        QCoreApplication.setApplicationName("AutoMate")
+
+    APP_DATA_DIR = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+    if not APP_DATA_DIR or not os.path.isdir(os.path.dirname(APP_DATA_DIR)):  # Checks the path
+        print(
+            f"CRITICAL ERROR: Could not determine a valid AppDataLocation. Path received: {APP_DATA_DIR}",
+            file=sys.stderr,
+        )
+        raise RuntimeError("Could not determine a valid AppDataLocation.")
+
+    try:
+        os.makedirs(APP_DATA_DIR, exist_ok=True)
+    except OSError as e:
+        print(f"CRITICAL ERROR: Could not create AppData directory '{APP_DATA_DIR}': {e}", file=sys.stderr)
+        raise RuntimeError(f"Failed to create AppData directory: {e}")
+
+    USER_DATA_FILE = os.path.join(APP_DATA_DIR, "user_data.json")
+    LAST_TOKEN_FILE = os.path.join(APP_DATA_DIR, "last_token.txt")
+    _paths_initialized = True
+    # print(f"Auth initialized paths: USER_DATA_FILE={USER_DATA_FILE}, LAST_TOKEN_FILE={LAST_TOKEN_FILE}") # Optional debug
+
+
+def get_app_data_dir():
+    """Gets the standard application data directory."""
+
+    if not QCoreApplication.organizationName() or not QCoreApplication.applicationName():
+        print("Warning: Org/App names not set before getting AppDataLocation.")
+
+        QCoreApplication.setOrganizationName("YourOrgName")  # Fallback
+        QCoreApplication.setApplicationName("AutoMate")  # Fallback
+
+    path = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+# This is the location where user data will be stored on the user's system.
+# Is a standard location for application data on Windows, macOS, and Linux.
+APP_DATA_DIR = get_app_data_dir()
+USER_DATA_FILE = os.path.join(APP_DATA_DIR, "user_data.json")
+LAST_TOKEN_FILE = os.path.join(APP_DATA_DIR, "last_token.txt")
+
+print(f"Auth using user data file: {USER_DATA_FILE}")
+print(f"Auth using token file: {LAST_TOKEN_FILE}")
 
 
 def load_user_data():
-    """
-    Loads and returns the JSON content from USER_DATA_FILE.
-    If the file does not exist, returns an empty dictionary.
-    """
+    """Loads user data from the standard app data location."""
+    _initialize_auth_paths()  # Ensure paths are set
+
     if not os.path.exists(USER_DATA_FILE):
         return {"users": []}
-
-    with open(USER_DATA_FILE, "r") as f:
-        try:
+    try:
+        with open(USER_DATA_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        except json.JSONDecodeError:
-            data = {"users": []}
+        if "users" not in data:  # Basic validation
+            print(f"Warning: user_data.json at {USER_DATA_FILE} is missing 'users' key. Resetting.", file=sys.stderr)
+            return {"users": []}
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"Warning: Failed to load/decode user data from {USER_DATA_FILE}: {e}. Resetting.", file=sys.stderr)
+        data = {"users": []}  # Reset if file is corrupted or not found mid-operation
+    except Exception as e:
+        print(f"Error loading user data from {USER_DATA_FILE}: {e}", file=sys.stderr)
+        data = {"users": []}  # Fallback on other errors
     return data
 
 
 def save_user_data(data):
-    """
-    Saves the given dictionary to USER_DATA_FILE as JSON.
-    """
-    with open(USER_DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    """Saves user data to the standard app data location."""
+    _initialize_auth_paths()
+
+    if not USER_DATA_FILE:
+        print("ERROR: USER_DATA_FILE path not set in auth module.")
+        return
+    try:
+        # Specify encoding and use atomic write pattern (write to temp, then rename)
+        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+        temp_file = USER_DATA_FILE + ".tmp"
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+        os.replace(temp_file, USER_DATA_FILE)  # Atomic rename/replace
+    except Exception as e:
+        print(f"Error saving user data to {USER_DATA_FILE}: {e}", file=sys.stderr)
 
 
 def register_user(email: str, password: str) -> bool:
@@ -110,3 +189,47 @@ def clear_remember_me_token(email: str) -> None:
             break
 
     save_user_data(data)
+
+
+def save_last_token(token: str):
+    """Saves the remember me token to its file."""
+    _initialize_auth_paths()
+    if not LAST_TOKEN_FILE:
+        print("ERROR: LAST_TOKEN_FILE path not set in auth module.")
+        return
+
+    try:
+        with open(LAST_TOKEN_FILE, "w", encoding="utf-8") as f:
+            f.write(token)
+    except Exception as e:
+        print(f"Error saving last token to {LAST_TOKEN_FILE}: {e}", file=sys.stderr)
+
+
+def load_last_token() -> Optional[str]:
+    """Loads the remember me token from its file."""
+    _initialize_auth_paths()
+    if not LAST_TOKEN_FILE:
+        print("ERROR: LAST_TOKEN_FILE path not set in auth module.")
+        return None
+
+    try:
+        with open(LAST_TOKEN_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        print(f"Error loading last token from {LAST_TOKEN_FILE}: {e}", file=sys.stderr)
+        return None
+
+
+def clear_last_token_file():
+    """Removes the token file."""
+    if not LAST_TOKEN_FILE:
+        print("ERROR: LAST_TOKEN_FILE path not set in auth module.")
+        return
+
+    try:
+        if os.path.exists(LAST_TOKEN_FILE):
+            os.remove(LAST_TOKEN_FILE)
+    except Exception as e:
+        print(f"Error clearing last token file {LAST_TOKEN_FILE}: {e}", file=sys.stderr)

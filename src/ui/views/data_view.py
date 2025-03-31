@@ -27,6 +27,7 @@ from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.utils.resources import resource_path
 from src.utils.undo_manager import undo_data_operation
 
 
@@ -46,7 +47,7 @@ class DataView(QWidget):
         self.single_file_path = None
         self.multi_file_paths = []
 
-        # 1) Instantiate the toast
+        # Instantiate the toast
         self.toast = ToastNotification(self)
 
         self.init_ui()
@@ -66,7 +67,9 @@ class DataView(QWidget):
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/data.png").scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_path_absolute = resource_path("assets/icons/data.png")
+        icon_pixmap = QPixmap(icon_path_absolute)
+        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
@@ -89,7 +92,7 @@ class DataView(QWidget):
         file_layout.addWidget(self.file_input)
 
         self.file_icon_btn = create_icon_button(
-            icon_path="assets/icons/folder.png",
+            icon_path=resource_path("assets/icons/folder.png"),
             icon_size=(29, 29),
             button_size=(30, 30),
         )
@@ -121,7 +124,7 @@ class DataView(QWidget):
         info_header_layout.addWidget(info_text)
 
         info_button = create_icon_button(
-            icon_path="assets/icons/info.png",
+            icon_path=resource_path("assets/icons/info.png"),
             icon_size=(16, 16),
             button_size=(20, 20),
         )

@@ -23,6 +23,7 @@ from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.utils.resources import resource_path
 from src.utils.undo_manager import undo_file_operation
 
 
@@ -50,7 +51,8 @@ class FileView(QWidget):
 
         # Icon
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/file.png")  # Icon by Uniconlabs
+        icon_path_absolute = resource_path("assets/icons/file.png")  # Icon by Uniconlabs
+        icon_pixmap = QPixmap(icon_path_absolute)
         icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         icon_label.setContentsMargins(0, 10, 0, 1)
         icon_label.setPixmap(icon_pixmap)
@@ -81,7 +83,7 @@ class FileView(QWidget):
         folder_layout.addWidget(self.folder_input)
 
         self.folder_icon_btn = create_icon_button(
-            icon_path="assets/icons/folder.png",
+            icon_path=resource_path("assets/icons/folder.png"),
             icon_size=(29, 29),
             button_size=(30, 30),
         )
@@ -174,7 +176,7 @@ class FileView(QWidget):
 
                 # Create info icon button
                 info_button = create_icon_button(
-                    icon_path="assets/icons/info.png",
+                    icon_path=resource_path("assets/icons/info.png"),
                     icon_size=(16, 16),
                     button_size=(20, 20),
                 )

@@ -9,6 +9,7 @@ from src.ui.components.components import create_button, create_icon_button, crea
 from src.ui.components.elided_label import ElidedLabel
 from src.ui.modals.base_modal import BaseModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, INFO_WINDOW_STYLE
+from src.utils.resources import resource_path
 
 # Abbreviations for day names
 DAY_ABBREVIATIONS = {
@@ -213,7 +214,9 @@ class RunningJobsModal(BaseModalWindow):
             label.setFixedWidth(self.COLUMN_WIDTHS[column_name])
             row_layout.addWidget(label)
 
-        cancel_btn = create_icon_button("assets/icons/cancel.png", icon_size=(11, 11), button_size=(13, 13))
+        cancel_btn = create_icon_button(
+            icon_path=resource_path("assets/icons/cancel.png"), icon_size=(11, 11), button_size=(13, 13)
+        )
         cancel_btn.clicked.connect(lambda _, j_id=job_id: self.on_cancel_job(j_id))
         cancel_btn.setFixedWidth(self.COLUMN_WIDTHS["Cancel"])
         row_layout.addWidget(cancel_btn)
