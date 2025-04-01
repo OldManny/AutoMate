@@ -19,6 +19,13 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+if hasattr(multiprocessing, 'set_start_method'):
+    try:
+        multiprocessing.set_start_method('spawn')
+    except RuntimeError:
+        # Method might already be set
+        pass
+
 # Set application and organization names
 ORGANIZATION_NAME = "AutoMate"
 APPLICATION_NAME = "AutoMate"
@@ -144,15 +151,18 @@ class MainApp(QMainWindow):
             daemon_stdout_log = os.path.join(APP_DATA_DIR, "daemon_stdout.log")
             daemon_stderr_log = os.path.join(APP_DATA_DIR, "daemon_stderr.log")
 
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            daemon_script_path = os.path.join(current_dir, "daemon.py")
-            if not os.path.exists(daemon_script_path):
-                return
+            # Instead of looking for daemon.py file, use sys.executable approach
+            daemon_script_path = resource_path("daemon.py")
 
-            args = [sys.executable, daemon_script_path]
+            # Create a new process group to isolate the daemon
+            args = [sys.executable, daemon_script_path, "--daemon"]
             kwargs = {}
+
             if sys.platform == "win32":
                 kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            elif sys.platform == "darwin":
+                # On macOS, use process groups
+                kwargs['preexec_fn'] = os.setpgrp
 
             stdout_handle = open(daemon_stdout_log, 'w')
             stderr_handle = open(daemon_stderr_log, 'w')
@@ -160,7 +170,8 @@ class MainApp(QMainWindow):
             kwargs['stderr'] = stderr_handle
 
             daemon_process = subprocess.Popen(args, **kwargs)
-        except Exception:
+        except Exception as e:
+            print(f"Error launching daemon: {e}")
             if 'stdout_handle' in locals() and not stdout_handle.closed:
                 stdout_handle.close()
             if 'stderr_handle' in locals() and not stderr_handle.closed:
@@ -372,10 +383,21 @@ class MainApp(QMainWindow):
             self.stacked_widget.setCurrentIndex(0)
 
 
-if __name__ == "__main__":
+def create_argument_parser():
     parser = argparse.ArgumentParser(description="AutoMate Application or Daemon.")
     parser.add_argument('--daemon', action='store_true', help='Run in background daemon mode.')
-    args = parser.parse_args()
+
+    # Add this to handle multiprocessing arguments
+    # This will collect any unknown args and discard them
+    parser.add_argument('--multiprocessing-args', nargs='*', help=argparse.SUPPRESS)
+
+    return parser
+
+
+if __name__ == "__main__":
+    parser = create_argument_parser()
+    # Parse known args only
+    args, unknown = parser.parse_known_args()
 
     # Define placeholders for path variables (to be set later)
     APP_DATA_DIR = None
