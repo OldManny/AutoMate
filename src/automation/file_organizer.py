@@ -32,11 +32,192 @@ def sort_by_type(source_directory, **kwargs):
     kwargs.get('task_type', None)
 
     type_directories = {
-        "images": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg"],
-        "documents": [".pdf", ".doc", ".docx", ".txt", ".rtf", ".odt", ".xls", ".xlsx", ".ppt", ".pptx"],
-        "audio": [".mp3", ".wav", ".ogg", ".flac", ".aac"],
-        "video": [".mp4", ".avi", ".mkv", ".mov", ".wmv"],
-        "archives": [".zip", ".rar", ".tar", ".gz", ".7z"],
+        "images": [
+            # Standard Raster
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".tif",
+            ".webp",
+            ".heic",
+            ".heif",
+            ".jfif",
+            ".ico",
+            ".psd",
+            # RAW Formats (subset)
+            ".raw",
+            ".cr2",
+            ".nef",
+            ".orf",
+            ".sr2",
+            ".arw",
+            ".dng",
+            # Vector
+            ".svg",
+            ".ai",
+            ".eps",
+        ],
+        "documents": [
+            # Text & Word Processing
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".txt",
+            ".rtf",
+            ".odt",
+            ".wpd",
+            ".pages",
+            # Spreadsheets
+            ".xls",
+            ".xlsx",
+            ".ods",
+            ".csv",
+            ".tsv",
+            ".numbers",
+            # Presentations
+            ".ppt",
+            ".pptx",
+            ".odp",
+            ".key",
+            # Markup & Data
+            ".html",
+            ".htm",
+            ".xml",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".md",
+            ".tex",
+            # Ebooks
+            ".epub",
+            ".mobi",
+            ".azw",
+            ".azw3",
+            # Other
+            ".log",
+            ".cfg",
+            ".ini",
+            ".conf",
+            ".toml",
+        ],
+        "audio": [
+            # Lossy
+            ".mp3",
+            ".aac",
+            ".ogg",
+            ".oga",
+            ".wma",
+            ".m4a",
+            ".opus",
+            # Lossless
+            ".wav",
+            ".flac",
+            ".aiff",
+            ".aif",
+            ".ape",
+            ".alac",
+            # MIDI & Score
+            ".mid",
+            ".midi",
+        ],
+        "video": [
+            # Common Formats
+            ".mp4",
+            ".m4v",
+            ".avi",
+            ".mkv",
+            ".mov",
+            ".wmv",
+            ".flv",
+            ".webm",
+            # Less Common / Specific Use
+            ".mpg",
+            ".mpeg",
+            ".mpe",
+            ".ogv",
+            ".vob",
+            ".mts",
+            ".m2ts",
+            ".3gp",
+            ".svi",
+        ],
+        "archives": [
+            # Common Archives
+            ".zip",
+            ".rar",
+            ".tar",
+            ".gz",
+            ".bz2",
+            ".7z",
+            ".xz",
+            # Disk Images & Packages
+            ".iso",
+            ".dmg",
+            ".img",
+            ".vhd",
+            ".vmdk",
+            ".jar",
+            ".deb",
+            ".rpm",
+            ".pkg",
+        ],
+        "code": [
+            # Scripting
+            ".py",
+            ".js",
+            ".php",
+            ".rb",
+            ".pl",
+            ".sh",
+            ".bat",
+            ".ps1",
+            # Compiled Languages (source)
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".java",
+            ".cs",
+            ".swift",
+            ".go",
+            ".kt",
+            ".kts",
+            # Web Front-end
+            ".css",
+            ".scss",
+            ".less",
+            ".jsx",
+            ".tsx",
+            ".vue",
+            # Data/Config (often alongside code)
+            ".sql",
+            ".r",
+            # Notebooks
+            ".ipynb",
+        ],
+        "fonts": [
+            ".ttf",
+            ".otf",
+            ".woff",
+            ".woff2",
+            ".eot",
+            ".fnt",
+        ],
+        "executables": [
+            # Windows
+            ".exe",
+            ".msi",
+            ".com",
+            # macOS
+            ".app",
+            # Linux
+            ".out",
+            # Android
+            ".apk",
+        ],
     }
 
     # Check if the specified directory exists
