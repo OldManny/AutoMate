@@ -63,6 +63,7 @@ from src.utils.auth import get_user_by_token  # noqa: E402
 from src.utils.auth import load_last_token  # noqa: E402
 from src.utils.auth import load_user_data  # noqa: E402
 from src.utils.auth import save_last_token  # noqa: E402; noqa: E402
+from src.utils.check_daemon import check_daemon_running  # noqa: E402
 from src.utils.resources import resource_path  # noqa: E402
 
 # Global variable to track the daemon process launched by the GUI
@@ -147,6 +148,12 @@ class MainApp(QMainWindow):
     def launch_daemon_if_needed(self):
         """Launch the daemon subprocess without managing the lock file."""
         global daemon_process
+
+        # First check if there's actually a daemon running
+        if check_daemon_running(LOCK_FILE_PATH):
+            print("Daemon already running. No need to start a new one.")
+            return
+
         try:
             daemon_stdout_log = os.path.join(APP_DATA_DIR, "daemon_stdout.log")
             daemon_stderr_log = os.path.join(APP_DATA_DIR, "daemon_stderr.log")
@@ -395,6 +402,13 @@ def create_argument_parser():
 
 
 if __name__ == "__main__":
+
+    # Enable High DPI support
+    if hasattr(Qt, 'AA_EnableHighDpiScaling'):
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
     parser = create_argument_parser()
     # Parse known args only
     args, unknown = parser.parse_known_args()

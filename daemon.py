@@ -12,6 +12,7 @@ from src.automation.scheduler import logging_config as logging_module, scheduler
 from src.automation.scheduler.job_handler import JSONFileChangeHandler
 from src.automation.scheduler.logging_config import setup_temporary_logging
 from src.automation.scheduler.scheduler_manager import SchedulerManager
+from src.utils.check_daemon import check_daemon_running
 
 # Module-level logger
 logger = logging.getLogger(__name__)
@@ -174,10 +175,10 @@ if __name__ == "__main__":
         log_message(f"--- Daemon __main__ Lock File Path: {LOCK_FILE_PATH} ---")
 
         log_message("--- Daemon __main__ checking for existing lock file ---")
-        if os.path.exists(LOCK_FILE_PATH):
-            log_message("Daemon lock file exists. Another instance might be running. Exiting.")
+        if check_daemon_running(LOCK_FILE_PATH):
+            log_message("Daemon lock file exists and process is running. Another instance is active. Exiting.")
             sys.exit(1)
-        log_message("--- Daemon __main__ lock file does not exist. Proceeding. ---")
+        log_message("--- Daemon __main__ no active process found. Proceeding. ---")
 
         log_message("--- Daemon __main__ attempting to create lock file ---")
         with open(LOCK_FILE_PATH, "w") as f:
