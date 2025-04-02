@@ -17,13 +17,27 @@ def check_daemon_running(lock_file_path):
         # Check if the process with this PID exists
         if sys.platform == "win32":
             import ctypes
+            import subprocess
 
-            kernel32 = ctypes.windll.kernel32
-            process = kernel32.OpenProcess(1, False, pid)
-            if process:
-                kernel32.CloseHandle(process)
-                return True
-            return False
+            # Using tasklist to check if the process exists (Windows-specific)
+            try:
+                output = subprocess.check_output(f'tasklist /FI "PID eq {pid}" /NH', shell=True)
+                if str(pid) in str(output):
+                    return True
+                # Process doesn't exist
+                os.remove(lock_file_path)
+                return False
+            except subprocess.SubprocessError:
+                # Fall back to kernel32 method with proper access rights
+                kernel32 = ctypes.windll.kernel32
+                PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                process = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+                if process:
+                    kernel32.CloseHandle(process)
+                    return True
+                # Process doesn't exist or can't be accessed
+                os.remove(lock_file_path)
+                return False
         else:
             # Unix-like systems
             os.kill(pid, 0)  # This doesn't actually kill the process, just checks if it exists

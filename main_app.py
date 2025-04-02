@@ -166,7 +166,8 @@ class MainApp(QMainWindow):
             kwargs = {}
 
             if sys.platform == "win32":
-                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                # This allows the daemon to survive even if parent is terminated
+                kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
             elif sys.platform == "darwin":
                 # On macOS, use process groups
                 kwargs['preexec_fn'] = os.setpgrp
