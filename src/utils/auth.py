@@ -6,6 +6,13 @@ import uuid
 
 from PyQt5.QtCore import QCoreApplication, QStandardPaths
 import bcrypt
+import keyring
+from keyring.errors import KeyringError
+
+# Use application's name to avoid collisions
+APP_NAME = "AutoMate"
+MAILGUN_API_KEY_SERVICE = f"{APP_NAME}-MailgunAPIKey"
+MAILGUN_DOMAIN_SERVICE = f"{APP_NAME}-MailgunDomain"
 
 USER_DATA_FILE = None
 LAST_TOKEN_FILE = None
@@ -25,7 +32,8 @@ def _initialize_auth_paths():
 
     if not QCoreApplication.organizationName() or not QCoreApplication.applicationName():
         print("Warning: Org/App names not set before getting AppDataLocation in auth.", file=sys.stderr)
-        # Set defaults if not set by main script
+
+        # Set defaults
         QCoreApplication.setOrganizationName("AutoMate")
         QCoreApplication.setApplicationName("AutoMate")
 
@@ -46,7 +54,6 @@ def _initialize_auth_paths():
     USER_DATA_FILE = os.path.join(APP_DATA_DIR, "user_data.json")
     LAST_TOKEN_FILE = os.path.join(APP_DATA_DIR, "last_token.txt")
     _paths_initialized = True
-    # print(f"Auth initialized paths: USER_DATA_FILE={USER_DATA_FILE}, LAST_TOKEN_FILE={LAST_TOKEN_FILE}") # Optional debug
 
 
 def get_app_data_dir():
@@ -178,34 +185,59 @@ def get_mailgun_credentials(email: str) -> Optional[tuple[str, str]]:
     Returns (api_key, domain) or None if user not found.
     """
     data = load_user_data()
-    for user in data["users"]:
-        if user["email"].lower() == email.lower():
-            # Return empty strings if keys don't exist yet (for backward compatibility)
-            api_key = user.get("mailgun_api_key", "")
-            domain = user.get("mailgun_domain", "")
-            return api_key, domain
-    return None  # User not found
+    user_exists = any(user["email"].lower() == email.lower() for user in data["users"])
+    if not user_exists:
+        print(f"User {email} not found in user_data.json")
+        return None  # User record doesn't exist
+
+    api_key = ""
+    domain = ""
+    try:
+        # Retrieve from keyring, using email as the 'username' for the service
+        stored_api_key = keyring.get_password(MAILGUN_API_KEY_SERVICE, email)
+        stored_domain = keyring.get_password(MAILGUN_DOMAIN_SERVICE, email)
+
+        api_key = stored_api_key if stored_api_key is not None else ""
+        domain = stored_domain if stored_domain is not None else ""
+    except KeyringError as e:
+        # Handle potential keyring errors (e.g., backend unavailable)
+        print(f"Keyring error while getting credentials for {email}: {e}", file=sys.stderr)
+    except Exception as e:
+        # Catch other potential errors
+        print(f"Unexpected error retrieving credentials from keyring for {email}: {e}", file=sys.stderr)
+
+    # Return the retrieved (or default empty) credentials
+    return api_key, domain
 
 
 def save_mailgun_credentials(email: str, api_key: str, domain: str) -> bool:
     """
-    Saves Mailgun credentials for the specified user.
-    Returns True if successful, False if user not found.
+    Saves Mailgun credentials for the specified user securely in the system keyring.
+    We still check user_data.json to ensure the user exists.
+    Returns True if successful, False otherwise.
     """
+    # Check if the user exists in user_data.json first
     data = load_user_data()
     user_found = False
     for user in data["users"]:
         if user["email"].lower() == email.lower():
-            user["mailgun_api_key"] = api_key.strip()
-            user["mailgun_domain"] = domain.strip()
             user_found = True
             break
 
-    if user_found:
-        save_user_data(data)
+    if not user_found:
+        print(f"Error: Could not find user {email} in user_data.json to save Mailgun credentials.")
+        return False
+
+    try:
+        # Save to keyring
+        keyring.set_password(MAILGUN_API_KEY_SERVICE, email, api_key.strip())
+        keyring.set_password(MAILGUN_DOMAIN_SERVICE, email, domain.strip())
         return True
-    else:
-        print(f"Error: Could not find user {email} to save Mailgun credentials.")
+    except KeyringError as e:
+        print(f"Keyring error saving credentials for {email}: {e}", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"Unexpected error saving credentials to keyring for {email}: {e}", file=sys.stderr)
         return False
 
 

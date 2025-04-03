@@ -90,7 +90,7 @@ class EmailView(QWidget):
         main_layout.addWidget(fields_card)
 
         # Settings Button
-        config_icon_path = resource_path("assets/icons/info.png")
+        config_icon_path = resource_path("assets/icons/settings.png")
         self.mailgun_config_btn = create_icon_button(
             icon_path=config_icon_path,
             icon_size=(18, 18),
