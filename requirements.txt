@@ -3,6 +3,7 @@ Pillow
 bcrypt
 pytest
 pandas
+keyring
 openpyxl
 watchdog
 pytest-mock

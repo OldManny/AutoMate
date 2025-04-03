@@ -128,7 +128,13 @@ def register_user(email: str, password: str) -> bool:
     hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
     hashed_pw_str = hashed_pw.decode("utf-8")
 
-    new_user = {"email": email, "hashed_password": hashed_pw_str, "remember_me_token": ""}  # default empty
+    new_user = {
+        "email": email,
+        "hashed_password": hashed_pw_str,
+        "remember_me_token": "",
+        "mailgun_api_key": "",
+        "mailgun_domain": "",
+    }
 
     data["users"].append(new_user)
     save_user_data(data)
@@ -164,6 +170,43 @@ def generate_remember_me_token(email: str) -> str:
 
     save_user_data(data)
     return token
+
+
+def get_mailgun_credentials(email: str) -> Optional[tuple[str, str]]:
+    """
+    Retrieves the Mailgun API Key and Domain for a given user email.
+    Returns (api_key, domain) or None if user not found.
+    """
+    data = load_user_data()
+    for user in data["users"]:
+        if user["email"].lower() == email.lower():
+            # Return empty strings if keys don't exist yet (for backward compatibility)
+            api_key = user.get("mailgun_api_key", "")
+            domain = user.get("mailgun_domain", "")
+            return api_key, domain
+    return None  # User not found
+
+
+def save_mailgun_credentials(email: str, api_key: str, domain: str) -> bool:
+    """
+    Saves Mailgun credentials for the specified user.
+    Returns True if successful, False if user not found.
+    """
+    data = load_user_data()
+    user_found = False
+    for user in data["users"]:
+        if user["email"].lower() == email.lower():
+            user["mailgun_api_key"] = api_key.strip()
+            user["mailgun_domain"] = domain.strip()
+            user_found = True
+            break
+
+    if user_found:
+        save_user_data(data)
+        return True
+    else:
+        print(f"Error: Could not find user {email} to save Mailgun credentials.")
+        return False
 
 
 def get_user_by_token(token: str) -> Optional[str]:

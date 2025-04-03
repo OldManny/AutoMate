@@ -308,6 +308,8 @@ class SchedulerManager:
                     "body_text": email_params.get("body_text"),
                     "cc_addresses": email_params.get("cc_addresses"),
                     "attachments": email_params.get("attachments"),
+                    "api_key": email_params.get("api_key"),
+                    "domain_name": email_params.get("domain_name"),
                 },
                 replace_existing=True,
             )

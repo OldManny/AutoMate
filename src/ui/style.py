@@ -249,3 +249,16 @@ QPushButton:hover {
     color: #EF4444;
 }
 """
+
+####### Login/Register input fields Style #######
+
+INPUT_FIELDS_STYLE = """
+QLineEdit {
+    background-color: #4B5D5C;
+    border-radius: 14px;
+    padding: 4px 12px;
+    margin: 5px 0;
+    font-size: 13px;
+    min-height: 4px;
+}
+"""

@@ -304,7 +304,9 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        email_view = EmailView(parent=self, scheduler_manager=self.scheduler_manager)
+        email_view = EmailView(
+            parent=self, scheduler_manager=self.scheduler_manager, current_user_email=self.current_user
+        )
         email_view.setObjectName("EmailView")
         layout.addWidget(email_view)
         return container
@@ -337,9 +339,13 @@ class MainApp(QMainWindow):
             self.current_user = user_email
             self.logged_in = True
             self.sidebar.setVisible(True)
+            email_view = self.findChild(EmailView, "EmailView")
+            if email_view:
+                email_view.current_user_email = self.current_user
             self.stacked_widget.setCurrentIndex(1)
         else:
             self.logged_in = False
+            self.current_user = ""
             self.sidebar.setVisible(False)
             self.stacked_widget.setCurrentIndex(0)
             self.current_user = ""
@@ -370,6 +376,9 @@ class MainApp(QMainWindow):
         self.current_user = email
         self.logged_in = True
         self.sidebar.setVisible(True)
+        email_view = self.findChild(EmailView, "EmailView")
+        if email_view:
+            email_view.current_user_email = self.current_user
         self.launch_daemon_if_needed()
         self.stacked_widget.setCurrentIndex(1)
 
@@ -385,6 +394,10 @@ class MainApp(QMainWindow):
 
         self.logged_in = False
         self.current_user = ""
+
+        email_view = self.findChild(EmailView, "EmailView")
+        if email_view:
+            email_view.current_user_email = ""
         if hasattr(self, 'sidebar'):
             self.sidebar.setVisible(False)
         if hasattr(self, 'stacked_widget'):
