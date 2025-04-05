@@ -12,6 +12,7 @@ from src.ui.modals.mailgun_credentials_modal import MailgunCredentialsModal
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
 from src.utils import auth
+from src.utils.auth import get_mailgun_credentials
 from src.utils.resources import resource_path
 
 
@@ -130,13 +131,17 @@ class EmailView(QWidget):
         api_key, domain = credentials
         if not api_key or not domain:
             # Prompt user
-            modal = MailgunCredentialsModal(self, current_key=api_key, current_domain=domain)
+            modal = MailgunCredentialsModal(
+                self, current_key=api_key, current_domain=domain, current_user_email=self.current_user_email
+            )
             if modal.exec_() == MailgunCredentialsModal.Accepted:
                 api_key, domain = modal.get_credentials()
                 # Save the newly entered credentials
                 if not auth.save_mailgun_credentials(self.current_user_email, api_key, domain):
                     self.toast.show_message("Failed to save credentials.", "error")
                     return None, None  # Failed to save
+            if not api_key or not domain:  # Re-check if user cleared fields in modal
+                self.toast.show_message("Mailgun credentials required.", "info")
             else:
                 # User cancelled the modal
                 self.toast.show_message("Mailgun credentials required.", "info")
@@ -204,16 +209,20 @@ class EmailView(QWidget):
             self.toast.show_message("Please log in first.", "info")
             return
 
-        current_key, current_domain = auth.get_mailgun_credentials(self.current_user_email) or (
+        current_key, current_domain = get_mailgun_credentials(self.current_user_email) or (
             "",
             "",
         )  # Get current vals
 
-        modal = MailgunCredentialsModal(self, current_key=current_key, current_domain=current_domain)
+        modal = MailgunCredentialsModal(
+            self, current_key=current_key, current_domain=current_domain, current_user_email=self.current_user_email
+        )
+
         if modal.exec_() == MailgunCredentialsModal.Accepted:
-            new_key, new_domain = modal.get_credentials()
-            if auth.save_mailgun_credentials(self.current_user_email, new_key, new_domain):
-                self.toast.show_message("Mailgun credentials updated.", "success")
+            # Fetch the latest credentials in case they were updated
+            new_key, new_domain = get_mailgun_credentials(self.current_user_email) or ("", "")
+            if new_key and new_domain:
+                self.toast.show_message("Settings saved.", "success")
             else:
                 self.toast.show_message("Failed to save credentials.", "error")
 

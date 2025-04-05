@@ -250,9 +250,9 @@ QPushButton:hover {
 }
 """
 
-####### Login/Register input fields Style #######
+####### Mailgun fields Style #######
 
-INPUT_FIELDS_STYLE = """
+INPUT_FIELDS_STYLE_MAILGUN = """
 QLineEdit {
     background-color: #4B5D5C;
     border-radius: 14px;

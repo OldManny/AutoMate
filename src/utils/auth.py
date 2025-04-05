@@ -252,6 +252,30 @@ def get_user_by_token(token: str) -> Optional[str]:
     return None
 
 
+def get_startup_setting(email: str) -> bool:
+    """Gets the 'start daemon on login' setting for the user."""
+    data = load_user_data()
+    for user in data["users"]:
+        if user["email"].lower() == email.lower():
+            return user.get("start_daemon_on_login", False)  # Default to False if key missing
+    return False  # User not found
+
+
+def set_startup_setting(email: str, enable: bool) -> bool:
+    """Sets the 'start daemon on login' setting for the user."""
+    data = load_user_data()
+    user_found = False
+    for user in data["users"]:
+        if user["email"].lower() == email.lower():
+            user["start_daemon_on_login"] = enable
+            user_found = True
+            break
+    if user_found:
+        save_user_data(data)
+        return True
+    return False  # User not found
+
+
 def clear_remember_me_token(email: str) -> None:
     """
     Clears the 'remember me' token for the given email user.
