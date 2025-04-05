@@ -46,6 +46,23 @@ QPushButton:focus {
 }
 """
 
+# Green style for Sign Out button
+GREEN_BUTTON_STYLE = """
+QPushButton {
+    background-color: #4B5D5C;
+    color: white;
+    border: none;
+    border-radius: 9px;
+}
+QPushButton:pressed {
+    background-color: #41504F;
+}
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
+"""
+
 ################ Input Field Style ################
 
 # Style for folder input fields

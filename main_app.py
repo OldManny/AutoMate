@@ -10,6 +10,7 @@ from PyQt5.QtGui import QColor, QFont, QFontDatabase, QIcon
 from PyQt5.QtWidgets import (
     QApplication,
     QButtonGroup,
+    QDialog,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QMainWindow,
@@ -49,6 +50,8 @@ DAEMON_LOG_FILE_TEMPLATE = os.path.join(TEMP_DIR, "automate_daemon_temp_{timesta
 
 from src.automation.scheduler import logging_config, scheduler_manager  # noqa: E402
 from src.automation.scheduler.scheduler_manager import SchedulerManager  # noqa: E402
+from src.ui.components.toast_notification import ToastNotification  # noqa: E402
+from src.ui.modals.mailgun_credentials_modal import MailgunCredentialsModal  # noqa: E402
 from src.ui.modals.running_modal import RunningJobsModal  # noqa: E402
 from src.ui.style import MAIN_WINDOW_STYLE, NAV_BUTTON_STYLE, SIDEBAR_STYLE  # noqa: E402
 from src.ui.views.data_view import DataView  # noqa: E402
@@ -59,6 +62,7 @@ from src.utils import undo_manager  # noqa: E402
 from src.utils.auth import clear_last_token_file  # noqa: E402
 from src.utils.auth import clear_remember_me_token  # noqa: E402
 from src.utils.auth import generate_remember_me_token  # noqa: E402
+from src.utils.auth import get_mailgun_credentials  # noqa: E402
 from src.utils.auth import get_user_by_token  # noqa: E402
 from src.utils.auth import load_last_token  # noqa: E402
 from src.utils.auth import load_user_data  # noqa: E402
@@ -101,6 +105,8 @@ class MainApp(QMainWindow):
         self.scheduler_manager = scheduler_manager
         self.logged_in = False
         self.current_user = ""
+
+        self.toast = ToastNotification(self)
 
         self.initUI()
         self.login_view = LoginView()
@@ -188,7 +194,7 @@ class MainApp(QMainWindow):
     def create_sidebar(self):
         """Create the sidebar with navigation buttons and additional options."""
         sidebar = QWidget()
-        sidebar.setFixedWidth(151)
+        sidebar.setFixedWidth(145)
         sidebar.setStyleSheet(SIDEBAR_STYLE)
 
         layout = QVBoxLayout(sidebar)
@@ -222,9 +228,9 @@ class MainApp(QMainWindow):
         running_btn.clicked.connect(self.open_running_modal)
         layout.addWidget(running_btn)
 
-        logout_btn = self.create_nav_button("Logout", "assets/icons/logout.png")
-        logout_btn.clicked.connect(self.on_logout_clicked)
-        layout.addWidget(logout_btn)
+        settings_btn = self.create_nav_button("Settings", "assets/icons/settings.png")
+        settings_btn.clicked.connect(self.open_settings_modal)
+        layout.addWidget(settings_btn)
 
         return sidebar
 
@@ -237,7 +243,7 @@ class MainApp(QMainWindow):
             button.setIcon(icon)
             button.setIconSize(QSize(29, 29))
             button.setFixedHeight(50)
-            button.setText("  " + text)
+            button.setText("" + text)
         button.setStyleSheet(NAV_BUTTON_STYLE)
         button.setCursor(Qt.PointingHandCursor)
         return button
@@ -277,6 +283,45 @@ class MainApp(QMainWindow):
             return
         running_modal = RunningJobsModal(scheduler_manager=self.scheduler_manager, parent=self)
         running_modal.exec_()
+
+    def open_settings_modal(self):
+        if not self.logged_in or not self.current_user:
+            self.toast.show_message("Please log in first", "info")  # Use MainApp's toast
+            return
+
+        try:
+            current_key, current_domain = get_mailgun_credentials(self.current_user) or ("", "")
+
+            modal = MailgunCredentialsModal(
+                self, current_key=current_key, current_domain=current_domain, current_user_email=self.current_user
+            )
+            try:
+                modal.logout_requested.disconnect(self.on_logout_clicked)
+            except TypeError:
+                pass
+            modal.logout_requested.connect(self.on_logout_clicked)
+
+            result = modal.exec_()
+
+            # Handle the result of the modal dialog
+            if result == QDialog.Accepted:
+                if hasattr(self, 'toast'):
+                    self.toast.show_message("Settings saved", "success")
+                else:
+                    print("Settings saved.")
+            elif result == QDialog.Rejected:
+                if not modal.logout_was_requested:
+                    # Only show "Cancelled" if logout was NOT the reason for rejection
+                    if hasattr(self, 'toast'):
+                        self.toast.show_message("Settings cancelled", "info")
+                    else:
+                        print("Settings changes cancelled.")
+
+        except Exception as e:
+            print(f"Error opening or processing settings modal: {e}")
+            import traceback
+
+            traceback.print_exc()
 
     def create_file_organizer_page(self):
         """Create the file organizer page."""
@@ -384,6 +429,9 @@ class MainApp(QMainWindow):
 
     def on_logout_clicked(self):
         """Log out the user, clear stored tokens, and reset the UI."""
+        if hasattr(self, 'toast'):
+            self.toast.show_message("Logged out", "info")
+
         clear_last_token_file()
         if self.current_user:
             clear_remember_me_token(self.current_user)

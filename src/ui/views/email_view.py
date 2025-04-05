@@ -5,14 +5,13 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.email_sender import is_valid_email, send_email_via_mailgun
-from src.ui.components.components import create_button, create_card, create_icon_button, create_separator
+from src.ui.components.components import create_button, create_card, create_separator
 from src.ui.components.email_body import BodyWidget
 from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.mailgun_credentials_modal import MailgunCredentialsModal
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
 from src.utils import auth
-from src.utils.auth import get_mailgun_credentials
 from src.utils.resources import resource_path
 
 
@@ -90,22 +89,10 @@ class EmailView(QWidget):
         fields_card = create_card(content_widgets=fields_card_widgets, margins=(8, 5, 8, 5), spacing=0)
         main_layout.addWidget(fields_card)
 
-        # Settings Button
-        config_icon_path = resource_path("assets/icons/settings.png")
-        self.mailgun_config_btn = create_icon_button(
-            icon_path=config_icon_path,
-            icon_size=(18, 18),
-            button_size=(30, 30),
-            style_sheet="QPushButton { border: none; background: transparent; }",
-        )
-        self.mailgun_config_btn.clicked.connect(self.open_mailgun_config_modal)
-
+        # Send Button
         self.send_btn = create_button("Send", BLUE_BUTTON_STYLE)
         self.send_btn.clicked.connect(self.on_send_clicked)
-
-        # Send Button
         btn_layout = QHBoxLayout()
-        btn_layout.addWidget(self.mailgun_config_btn)
         btn_layout.addStretch(1)
         # btn_layout.addSpacing(5)
         btn_layout.addWidget(self.send_btn)
@@ -202,29 +189,6 @@ class EmailView(QWidget):
 
         except Exception as e:
             self.toast.show_message(str(e), "error")
-
-    def open_mailgun_config_modal(self):
-        """Opens the Mailgun credentials modal to set or update credentials."""
-        if not self.current_user_email:
-            self.toast.show_message("Please log in first.", "info")
-            return
-
-        current_key, current_domain = get_mailgun_credentials(self.current_user_email) or (
-            "",
-            "",
-        )  # Get current vals
-
-        modal = MailgunCredentialsModal(
-            self, current_key=current_key, current_domain=current_domain, current_user_email=self.current_user_email
-        )
-
-        if modal.exec_() == MailgunCredentialsModal.Accepted:
-            # Fetch the latest credentials in case they were updated
-            new_key, new_domain = get_mailgun_credentials(self.current_user_email) or ("", "")
-            if new_key and new_domain:
-                self.toast.show_message("Settings saved.", "success")
-            else:
-                self.toast.show_message("Failed to save credentials.", "error")
 
     def open_schedule_modal(self):
         """Opens the Schedule Modal Window for setting email schedules,
