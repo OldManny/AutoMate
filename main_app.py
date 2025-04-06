@@ -456,8 +456,6 @@ def create_argument_parser():
     parser = argparse.ArgumentParser(description="AutoMate Application or Daemon.")
     parser.add_argument('--daemon', action='store_true', help='Run in background daemon mode.')
 
-    # Add this to handle multiprocessing arguments
-    # This will collect any unknown args and discard them
     parser.add_argument('--multiprocessing-args', nargs='*', help=argparse.SUPPRESS)
 
     return parser
