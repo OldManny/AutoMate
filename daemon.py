@@ -110,7 +110,7 @@ def run_daemon():
         print("--- run_daemon() finished ---", flush=True)
 
 
-# Global variables for logging and lock file
+# Logging and locking
 output_log_path = None
 LOCK_FILE_PATH = None
 
@@ -175,12 +175,16 @@ if __name__ == "__main__":
         log_message(f"--- Daemon __main__ Lock File Path: {LOCK_FILE_PATH} ---")
 
         log_message("--- Daemon __main__ checking for existing lock file ---")
+
+        # Prevent multiple daemons by checking existing lock file
         if check_daemon_running(LOCK_FILE_PATH):
             log_message("Daemon lock file exists and process is running. Another instance is active. Exiting.")
-            sys.exit(1)
+            sys.exit(0)
         log_message("--- Daemon __main__ no active process found. Proceeding. ---")
 
         log_message("--- Daemon __main__ attempting to create lock file ---")
+
+        # Create lock file for this daemon run
         with open(LOCK_FILE_PATH, "w") as f:
             f.write(str(os.getpid()))
         log_message(f"Daemon created lock file: {LOCK_FILE_PATH}")

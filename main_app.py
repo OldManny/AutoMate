@@ -487,6 +487,9 @@ if __name__ == "__main__":
 
     if args.daemon:
         multiprocessing.freeze_support()
+
+        from daemon import run_daemon  # noqa: E402
+
         daemon_app_instance = QCoreApplication(sys.argv if hasattr(sys, 'argv') else [''])
         QCoreApplication.setOrganizationName(ORGANIZATION_NAME)
         QCoreApplication.setApplicationName(APPLICATION_NAME)
@@ -503,21 +506,23 @@ if __name__ == "__main__":
         OPERATION_LOG_FILE_PATH = os.path.join(APP_DATA_DIR, "operation_log.json")
         ATTACHMENTS_BASE_DIR_PATH = os.path.join(APP_DATA_DIR, "scheduled_attachments")
 
-        from daemon import run_daemon  # noqa: E402
-
         configure_paths()
 
-        if os.path.exists(LOCK_FILE_PATH):
-            sys.exit(1)
+        # if os.path.exists(LOCK_FILE_PATH):
+        #     print("Daemon is already running; skipping new instance.")
+        #     # Option A: exit "successfully" – code 0
+        #     sys.exit(0)
 
         try:
             with open(LOCK_FILE_PATH, "w") as f:
                 f.write(str(os.getpid()))
             atexit.register(cleanup_lock_file)
+
             run_daemon()
+
         except Exception:
             cleanup_lock_file()
-            sys.exit(1)
+            sys.exit(0)
         finally:
             cleanup_lock_file()
         sys.exit(0)

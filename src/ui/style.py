@@ -272,6 +272,7 @@ QPushButton:hover {
 INPUT_FIELDS_STYLE_MAILGUN = """
 QLineEdit {
     background-color: #4B5D5C;
+    color: white;
     border-radius: 14px;
     padding: 4px 12px;
     margin: 5px 0;

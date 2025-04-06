@@ -24,7 +24,7 @@ class MailgunCredentialsModal(BaseModalWindow):
     logout_requested = pyqtSignal()
 
     def __init__(self, parent=None, current_key="", current_domain="", current_user_email=""):
-        super().__init__(width=400, height=380, style_sheet=INFO_WINDOW_STYLE, parent=parent)
+        super().__init__(width=400, height=390, style_sheet=INFO_WINDOW_STYLE, parent=parent)
 
         # Center the modal relative to the parent
         if parent:
