@@ -107,32 +107,44 @@ class EmailView(QWidget):
         Returns (api_key, domain) or (None, None) if user cancels or retrieval fails.
         """
         if not self.current_user_email:
-            self.toast.show_message("User not identified.")
+            self.toast.show_message("User not identified")
             return None, None
 
         credentials = auth.get_mailgun_credentials(self.current_user_email)
-        if credentials is None:  # User not found in auth data (shouldn't happen if logged in)
-            self.toast.show_message("Error retrieving user data.", "error")
+        if credentials is None:
+            self.toast.show_message("Error retrieving user data", "error")
             return None, None
 
         api_key, domain = credentials
+
+        # If either credential is missing, open the MailgunCredentialsModal
         if not api_key or not domain:
-            # Prompt user
+            self.toast.show_message("Mailgun credentials required", "info")
+
             modal = MailgunCredentialsModal(
                 self, current_key=api_key, current_domain=domain, current_user_email=self.current_user_email
             )
-            if modal.exec_() == MailgunCredentialsModal.Accepted:
+            self.center_modal(modal)
+
+            result = modal.exec_()
+            if result == MailgunCredentialsModal.Accepted:
                 api_key, domain = modal.get_credentials()
-                # Save the newly entered credentials
+                # Attempt to save the newly entered credentials
                 if not auth.save_mailgun_credentials(self.current_user_email, api_key, domain):
-                    self.toast.show_message("Failed to save credentials.", "error")
-                    return None, None  # Failed to save
-            if not api_key or not domain:  # Re-check if user cleared fields in modal
-                self.toast.show_message("Mailgun credentials required.", "info")
+                    self.toast.show_message("Failed to save credentials", "error")
+                    return None, None
+
+                if api_key and domain:
+                    # Credentials are now valid & saved
+                    self.toast.show_message("Settings saved", "info")
+                else:
+                    # User left them blank
+                    self.toast.show_message("Settings cancelled", "info")
+                    return None, None
             else:
-                # User cancelled the modal
-                self.toast.show_message("Mailgun credentials required.", "info")
-                return None, None  # Abort action
+                # Modal was closed or "Cancel" pressed
+                self.toast.show_message("Settings cancelled", "info")
+                return None, None
 
         return api_key, domain
 
