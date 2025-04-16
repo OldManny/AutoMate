@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.email_sender import is_valid_email, send_email_via_mailgun
@@ -44,13 +44,15 @@ class EmailView(QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
+        icon_relative_path = "assets/icons/email.png"
+        logical_icon_size = QSize(39, 39)
         icon_label = QLabel()
-        icon_path_absolute = resource_path("assets/icons/email.png")
-        icon_pixmap = QPixmap(icon_path_absolute)
-        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setContentsMargins(0, 10, 0, 1)
-        icon_label.setPixmap(icon_pixmap)
+        icon_path_absolute = resource_path(icon_relative_path)
+        icon = QIcon(icon_path_absolute)
+        scaled_pixmap = icon.pixmap(logical_icon_size)
+        icon_label.setPixmap(scaled_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setContentsMargins(0, 10, 0, 1)
 
         desc_label = QLabel("Send emails right away,\nor schedule them to repeat as needed.")
         desc_label.setAlignment(Qt.AlignCenter)
