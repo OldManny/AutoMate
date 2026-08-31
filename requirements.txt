@@ -2,10 +2,10 @@ PyQt5
 bcrypt
 pytest
 pandas
+keyring
 openpyxl
 watchdog
 pytest-mock
 setuptools
 APScheduler
-python-dotenv
 requests

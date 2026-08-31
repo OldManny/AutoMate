@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![Run Tests](https://github.com/OldManny/AutoMate/actions/workflows/test.yml/badge.svg)](https://github.com/OldManny/AutoMate/actions/workflows/test.yml) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OldManny/AutoMate/main.svg)](https://results.pre-commit.ci/latest/github/OldManny/AutoMate/main)
+[![Run Tests](https://github.com/OldManny/AutoMate/actions/workflows/test.yml/badge.svg)](https://github.com/OldManny/AutoMate/actions/workflows/test.yml) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OldManny/AutoMate/main.svg)](https://results.pre-commit.ci/latest/github/OldManny/AutoMate/main) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/OldManny/AutoMate)](https://github.com/OldManny/AutoMate/releases/latest)
 
 </div>
 
-**AutoMate** is a Python-based tool that automates common tasks like organizing files, sending emails, and handling data entry. Its user-friendly interface is built with PyQt5. Whether you need to keep files tidy, schedule recurring tasks, or manage data, AutoMate provides a convenient all-in-one solution.
+**AutoMate** automates common tasks like organizing files, sending emails (via Mailgun), and managing data, all through a user-friendly interface built with PyQt5. Keep your files tidy, schedule tasks, and streamline data operations easily.
 
 <p align="center">
   <img src="images/Login.png" alt="Login Dialog" />
@@ -15,9 +15,12 @@
 # Table of Contents
 
 - [Features](#features)
-- [Setup](#setup)
-  - [Authentication](#authentication)
+- [Installation](#installation)
+  - [Windows](#windows)
+  - [macOS](#macos)
+- [Getting Started](#getting-started)
 - [Usage](#usage)
+  - [Settings](#settings)
   - [Files](#files)
   - [Email](#email)
   - [Data](#data)
@@ -25,167 +28,116 @@
   - [Running](#running)
   - [Info](#info)
 - [Undo](#undo)
-- [Testing](#testing)
+- [Reporting Issues](#reporting-issues)
 - [Attribution](#attribution)
 
 
 ## Features
 
-- **File Organization**: Sort files by type, date and size, rename, compress, and backup files. Detect and relocate duplicates with ease.
-- **Email Sending**: Quickly send emails with attachments or schedule them for later delivery (feature in active development).
-- **Data Entry Automation**: Streamline your workflow by automating data entry for various file formats (feature under development).
-- **Automation Scheduling**: Set automated tasks to run at specific times or days.
-- **User-Friendly Interface**: Access all features from a clean, intuitive PyQt5 interface.
+-   **File Organization**: Sort files by type, date, and size. Rename, compress, backup, and detect duplicate files.
+-   **Email Sending**: Send emails with attachments using your Mailgun account. Schedule emails for later delivery.
+-   **Data Entry Automation**: Merge and mirror data across multiple CSV/Excel files intelligently.
+-   **Automation Scheduling**: Set file organization or email tasks to run automatically at specific times or on chosen days.
+-   **User-Friendly Interface**: Clean and intuitive interface for easy access to all features.
+-   **Secure Local Authentication**: Your login password is securely hashed and stored only on your local machine.
 
 
-## Setup
+## Installation
 
-1. **Clone the repository**
+Download the latest version for your operating system from the [**AutoMate Releases Page**](https://github.com/OldManny/AutoMate/releases/latest).
 
-    ```sh
-    git clone https://github.com/OldManny/AutoMate.git
-    cd AutoMate
-    ```
+## Windows
 
-2. **Create a virtual environment**
+1.  Download the `.exe` installer file from the Releases page.
+2.  Double-click the downloaded `.exe` file.
+3.  Follow the on-screen prompts to complete the installation.
+4.  Launch AutoMate from your Start Menu or Desktop shortcut.
 
-    ```sh
-    python3 -m venv .venv
-    ```
+### macOS
 
-3. **Activate the virtual environment**
+1.  Download the `.dmg` disk image file from the Releases page.
+2.  Double-click the downloaded `.dmg` file to mount it.
+3.  Drag the `AutoMate.app` icon into your `Applications` folder.
+4.  You may need to grant permission to run an application downloaded from the internet the first time you open it (Right-click -> Open, or via System Settings > Privacy & Security).
+5.  Launch AutoMate from your `Applications` folder.
 
-    ```sh
-    source venv/bin/activate  # On Windows use `.\venv\Scripts\activate`
-    ```
+## Getting Started
 
-4. **Install the dependencies**
-
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-5. **Set up environment variables**
-
-    Create a .env file in the root directory to store API credentials. (Further details will be added once the email automation feature is complete.)
-
-
-### Authentication
-
-When setting up AutoMate for the first time, you’ll now see a **Login** or **Register** prompt. Create your account using a secure password, which will be encrypted and stored locally.
-
-The login system:
-
-- **bcrypt-based encryption**: Passwords are hashed using bcrypt and stored locally for enhanced security.
-- **Local storage**: No passwords leave your machine. All authentication data remains under your control.
-- **Registration & login forms**: Register or log in to gain access to the application’s full feature set.
-
+1.  **Launch AutoMate:** Open the application after installation.
+2.  **Register/Login:**
+    *   If this is your first time, click **Register**, enter a username and a strong password, and click **Register** again.
+    *   If you have already registered, enter your username and password, and click **Login**.
+    *   Your credentials are encrypted and stored securely on your local computer only.
+3.  **Configure Settings (Important for Email):** Before using features like Email, go to the **Settings** to enter your Mailgun API Key and Domain.
 
 ## Usage
 
+Access different features using the sidebar navigation within the application.
+
+### Settings
+
+<p align="center">
+  <img src="images/Settings.png" alt="Settings Modal" />
+</p>
+
+The **Settings** modal allows you to configure application behavior and manage credentials:
+
+1.  **Mailgun API Key**: **Required for sending email.** Enter your Mailgun API key here. You can find this in your Mailgun account settings.
+2.  **Mailgun Domain**: **Required for sending email.** Enter your Mailgun sending domain (e.g., `sandbox....mailgun.org` or your verified custom domain).
+3.  **Launch at Login**: Check this box to automatically start the AutoMate background service when you log into your computer. This ensures scheduled tasks run reliably even if the main application window isn't open. Highly recommended if you use the **Schedule** feature.
+4.  **Sign Out**: Click this button to log out of your current AutoMate user account. You will be returned to the Login screen.
+
+Only **Mailgun API** is supported at this stage. Free accounts will give you 3000 emails per month; however, you have to first authorize each recipient in your account.
 
 ### Files
 
-
 <p align="center">
-  <img src="images/OrganizeFiles.png" alt="Organize Files Dialog" />
+  <img src="images/Files.png" alt="Organize Files Dialog" />
 </p>
 
+Manage your files efficiently:
 
-From the sidebar, select Files to open the file management area. The interface has been updated for clarity:
+1.  **Select Folder**: Choose the folder you want to organize.
+2.  **Choose Actions**: Select one action like Sort by Type, Date, Size, Detect Duplicates, Rename, Compress, or Backup.
+3.  **Run or Schedule**: Click **Run** to perform the actions immediately, or select **Schedule** from the sidebar to automate these tasks later.
 
-1. **Select Folder**: Click on the folder icon and select the target folder.
-
-2. **Sort by Type**: Move files into directories based on their file type (e.g., images, documents).
-
-3. **Sort by Date**: Organize files by their modification date.
-
-4. **Sort by Size**: Group files into categories based on their size.
-
-5. **Detect Duplicates**: Identify and move duplicate files to a "duplicates" folder.
-
-6. **Rename Files**: Bulk rename with a specific naming pattern.
-
-7. **Compress Files**: Compress all files into a single ZIP archive.
-
-8. **Backup Files**: Save an additional copy of your files.
-
-Use **Undo** to revert your last operation, and **Run** to execute your chosen tasks. Select **Schedule** from the sidebar to schedule one or more tasks.
-
+Use **Undo** to revert only the *last* file operation.
 
 ### Email
-
 
 <p align="center">
   <img src="images/Email.png" alt="Email Dialog" />
 </p>
 
+Send emails using your Mailgun account. **Requires Mailgun API Key and Domain to be configured in Settings first.**
 
-This feature integrates with the [Mailgun API](https://www.mailgun.com/) using your Mailgun credentials from environment variables.
+1.  **Fill Out Fields**: Enter recipient(s) (`To`), optional `Cc`, `Subject`, and your `From` address. *Note: Free Mailgun sandbox domains require recipients to be authorized in Mailgun.*
+2.  **Compose Email**: Write your message in the text area. Drag and drop files to add attachments.
+3.  **Send or Schedule**: Click **Send** to dispatch immediately via Mailgun, or select **Schedule** from the sidebar to send it later or set up recurring emails.
 
-1. **Add Mailgun Credentials** in an .env file set at the root level of you project directory. For example:
-
-    ```sh
-    MAILGUN_API_KEY=your-mailgun-api-key
-    MAILGUN_DOMAIN=yourdomain.mailgun.org
-    ```
-
-2. **Fill Out the Fields**
-
-   - **To**: Specify recipient addresses (comma-separated for multiple). Must match an authorized Mailgun receiver for free tier, which is easy to set up in your mailgun account.
-   - **Cc**: (Optional) Add email addresses to carbon-copy.
-   - **Subject**: Provide a concise subject line.
-   - **From**: Insert the sender's address.
-
-3. **Write Your Email**
-Use the large text area to draft your email body. Drag and drop to add files as needed. Attachments will be included in your outgoing message.
-
-4. **Send Immediately**
-Click Send to dispatch the email through Mailgun. If successful, you’ll see a confirmation and your fields will be cleared.
-
-5. **(Optional) Schedule for Later**
-If you wish to send the email at a future time (or have it repeat on certain days), select Schedule from the sidebar after you completed all fields required in the Email window. Set your desired time and days to automate sending:
-
-   - **Time**: When the email should go out.
-   - **Days**: Which days to repeat (for recurring emails).
-
-**Note**: Unlike file operations, there is no “Undo” once an email is sent. Make sure your addresses and attachments are correct before clicking **Send**.
-
+**No Undo**: Once an email is sent, it cannot be recalled. Double-check details before sending.
 
 ### Data
-
 
 <p align="center">
   <img src="images/Data.png" alt="Data Merging and Mirroring Dialog" />
 </p>
 
+Automate operations on CSV/Excel files:
 
-The **Data** module automates CSV/Excel operations via two actions:
+*   **Merge**: Combine data from multiple source files into a single master file, intelligently handling columns and preventing duplicates.
+*   **Mirror**: Copy data from a master file to target files, syncing matching columns.
+*   **Undo**: Revert changes made during the last Merge or Mirror operation.
 
-**Merge**
-- Combine data from multiple CSV/Excel files into one master file.
-- If the master file already has columns (even if it has no rows), that structure is respected. The merge copies data only into the columns that match via synonyms, ignoring additional columns from the source files.
-- If the master file is empty (no columns at all), all relevant columns from the source files are carried over.
-- Name fields ("First/Last Name" vs. "Full Name") are automatically handled. The application checks the master file's existing name format: if it only has "Full Name," incoming data is combined; if it only has split columns, incoming "Full Name" fields are split. It handles various column fields, not only Names.
-- Intelligent duplicate detection prevents redundant entries by normalizing data values (accounting for case and whitespace variations) before comparison.
-
-**Mirror**
-- Copy the master file's contents to one or more target files, syncing columns as needed.
-- Existing columns in each target file remain intact, and only matching columns get updated with master data. Empty targets inherit the master's columns.
-- Duplicate prevention ensures target files remain clean by using the same approach as in the merge automation.
-
-This allows flexible usage:
+Allows flexible usage:
 - To **import only certain columns**, create or prepare a master/target file containing just those columns. The rest will be ignored.
 - To **import everything**, use an empty file so all columns from the sources are included.
 - All name column logic applies as above (automatically merging or splitting Full/First/Last and more as needed).
 
-**Undo**
-- Each merge or mirror allows to revert the master or target files to their pre‐operation state by using the **Undo** button.
-
 ### Schedule
 
 <p align="center">
-  <img src="images/ScheduleAutomation.png" alt="Schedule Automation Modal" />
+  <img src="images/Schedule.png" alt="Schedule Automation Modal" />
 </p>
 
 Automate tasks, such as file operations or sending emails by scheduling them at specific times and days. Once created, schedules are handled by a background daemon, allowing tasks to run even if you close the app. This daemon uses [APScheduler](https://apscheduler.readthedocs.io/en/stable/) and remains persistent across sessions:
@@ -195,8 +147,7 @@ Automate tasks, such as file operations or sending emails by scheduling them at 
    - **Local JSON Sync**: A dedicated JSON file keeps track of all scheduled jobs (additions or deletions). A watchdog monitors changes and updates APScheduler accordingly, so any adjustments via the app interface are instantly reflected in the schedule.
    - **File, Email and Data Compatibility**: Schedule file operations (like “Sort by Date” or “Compress Files”) as well as emails (via Mailgun). Both use the same scheduling framework.
 
-This ensures complete control over automations, even when the app is closed.
-
+This ensures complete control over automations, even when the app is closed. Consider enabling "Launch at Login" in the **Settings** modal for seamless background operation.
 
 ### Running
 
@@ -204,7 +155,7 @@ This ensures complete control over automations, even when the app is closed.
   <img src="images/Running.png" alt="Running Modal" />
 </p>
 
-The Running modal provides real-time status and management of ongoing or scheduled tasks:
+The Running modal provides real-time status and management of scheduled tasks:
 
   - **Type**: The type of task being executed (e.g., Sort by Size, Rename Files).
   - **Target**: The target directory for the automation.
@@ -213,37 +164,24 @@ The Running modal provides real-time status and management of ongoing or schedul
 
 Use the red ❌ icon to cancel a task before it begins.
 
-
 ### Info
 
 <p align="center">
   <img src="images/InfoModal.png" alt="Info Modal" />
 </p>
 
-An Info modal offers quick, context-sensitive tips and instructions for each feature, making it easy to understand and use.
-
+Click the Info icon (a circled 'i') in different sections for context-specific help and tips.
 
 ## Undo
 
-The Undo button in the File and Data dialogs will revert the last performed action. This is handy if you need to reverse an accidental move, rename, or other operation.
+The **Undo** button is available in the **Files** and **Data** sections. It reverts only the *last completed operation* in that section (e.g., file sorting, data merging). **Email sending cannot be undone.**
 
+## Reporting Issues
 
-## Testing
-
-To run tests for the Files, Email, Authentication and Scheduler modules (others are in progress):
-
-1. Navigate to the project root directory.
-2. Execute:
-    ```sh
-    pytest tests/
-    ```
-
-Future tests for **Data** module are under development.
-
+If you encounter any bugs or have suggestions for improvement, please report them on the [**GitHub Issues page**](https://github.com/OldManny/AutoMate/issues). Provide as much detail as possible, including your operating system and steps to reproduce the problem.
 
 ## Attribution
 
-
-- Icons from [Freepik](https://www.freepik.com/):
-    - [Favourite folder icon](https://www.freepik.com/icon/favourite-folder_11471618#fromView=search&page=1&position=42&uuid=622cae6d-d6fe-404e-b11b-ecc936850666) by [juicy_fish](https://www.freepik.com/author/juicy-fish/icons)
-    - [Cancel icon](https://www.freepik.com/icon/cancel_8532367) by [Muhammad Waqas Khan](https://www.freepik.com/author/muhammad-waqas-khan/icons)
+-   Icons from [Freepik](https://www.freepik.com/):
+    -   [Favourite folder icon](https://www.freepik.com/icon/favourite-folder_11471618) by [juicy\_fish](https://www.freepik.com/author/juicy-fish/icons)
+    -   [Cancel icon](https://www.freepik.com/icon/cancel_8532367) by [Muhammad Waqas Khan](https://www.freepik.com/author/muhammad-waqas-khan/icons)
