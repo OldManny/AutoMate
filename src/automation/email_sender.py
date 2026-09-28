@@ -1,11 +1,7 @@
 import os
 import re
 
-from dotenv import load_dotenv
 import requests
-
-# Load environment variables from a .env file
-load_dotenv()
 
 # Regular expression for validating email addresses
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -65,6 +61,8 @@ def send_email_via_mailgun(
     to_addresses: list,
     subject: str,
     body_text: str,
+    api_key: str,
+    domain_name: str,
     cc_addresses: list = None,
     attachments: list = None,
 ):
@@ -76,17 +74,15 @@ def send_email_via_mailgun(
     - to_addresses: List of recipient email addresses (e.g., ['user@example.com'])
     - subject: The subject of the email
     - body_text: The email body as plain text
+    - api_key: Mailgun API Key
+    - domain_name: Mailgun Domain Name
     - cc_addresses: (Optional) List of email addresses to Cc
     - attachments: (Optional) List of file paths to attach
     """
 
-    # Retrieve Mailgun credentials from environment variables
-    api_key = os.environ.get("MAILGUN_API_KEY", "").strip()
-    domain_name = os.environ.get("MAILGUN_DOMAIN", "").strip()
-
-    if not api_key.strip() or not domain_name.strip():
-        # Raise an error if credentials are missing
-        raise ValueError("Mailgun credentials not set\nin environment variables.")
+    # Validate provided credentials
+    if not api_key or not domain_name:
+        raise ValueError("Mailgun API Key and Domain Name\nmust be provided.")
 
     # Validate email addresses before sending
     validate_addresses(from_address, to_addresses, cc_addresses)
@@ -115,20 +111,29 @@ def send_email_via_mailgun(
     if attachments:
         for path in attachments:
             if os.path.isfile(path):
-                files.append(("attachment", open(path, "rb")))
+                # Ensure file is opened in binary read mode
+                try:
+                    f_handle = open(path, "rb")
+                    files.append(("attachment", f_handle))
+                except IOError as e:
+                    # Clean up already opened files before raising
+                    for _, opened_file in files:
+                        opened_file.close()
+                    raise IOError(f"Error opening attachment {path}: {e}")
 
     # Make the POST request to Mailgun API
     try:
         response = requests.post(url, auth=("api", api_key), data=data, files=files)
 
         # Close all opened files
-        for _, file in files:
-            file.close()
+        for _, file_handle in files:
+            if not file_handle.closed:
+                file_handle.close()
 
         # Handle non-200 status codes with a short message
         if response.status_code == 401:
             # Means invalid credentials
-            raise Exception("Invalid or missing Mailgun credentials.")
+            raise Exception("Invalid Mailgun API Key or Domain.")
         elif response.status_code != 200:
             # Parse a short error from the Mailgun response
             error_msg = parse_mailgun_error(response)
@@ -138,6 +143,7 @@ def send_email_via_mailgun(
 
     except Exception as e:
         # Make sure files are closed even if an error occurs
-        for _, file in files:
-            file.close()
-        raise e
+        for _, file_handle in files:
+            if not file_handle.closed:
+                file_handle.close()
+        raise e  # Re-raise the exception
