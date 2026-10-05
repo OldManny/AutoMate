@@ -1,15 +1,18 @@
 from datetime import datetime
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from src.automation.email_sender import is_valid_email, send_email_via_mailgun
 from src.ui.components.components import create_button, create_card, create_separator
 from src.ui.components.email_body import BodyWidget
 from src.ui.components.toast_notification import ToastNotification
+from src.ui.modals.mailgun_credentials_modal import MailgunCredentialsModal
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, EMAIL_INPUT_STYLE
+from src.utils import auth
+from src.utils.resources import resource_path
 
 
 class EmailView(QWidget):
@@ -18,10 +21,11 @@ class EmailView(QWidget):
     for text & attachments. The 'Send' button calls Mailgun.
     """
 
-    def __init__(self, parent=None, scheduler_manager=None):
+    def __init__(self, parent=None, scheduler_manager=None, current_user_email=""):
         super().__init__(parent)
         self.setObjectName("EmailView")
         self.scheduler_manager = scheduler_manager
+        self.current_user_email = current_user_email
 
         # Apply the global style for email fields
         self.setStyleSheet(EMAIL_INPUT_STYLE)
@@ -34,37 +38,36 @@ class EmailView(QWidget):
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Header
+        # Header Setup
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
-        # Email icon for the header
+        icon_relative_path = "assets/icons/email.png"
+        logical_icon_size = QSize(39, 39)
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/email.png")
-        icon_pixmap = icon_pixmap.scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setContentsMargins(0, 10, 0, 1)
-        icon_label.setPixmap(icon_pixmap)
+        icon_path_absolute = resource_path(icon_relative_path)
+        icon = QIcon(icon_path_absolute)
+        scaled_pixmap = icon.pixmap(logical_icon_size)
+        icon_label.setPixmap(scaled_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setContentsMargins(0, 10, 0, 1)
 
-        # Description text for the header
         desc_label = QLabel("Send emails right away,\nor schedule them to repeat as needed.")
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         desc_label.setStyleSheet("color: #C9D3D5; font-size: 12px;")
 
-        # Add the icon and text
         header_layout.addWidget(icon_label)
         header_layout.addWidget(desc_label)
         main_layout.addWidget(header_widget)
         main_layout.addWidget(create_separator())
 
-        # Store all field widgets in a list
+        # Fields Card Setup
         fields_card_widgets = []
 
-        # Single-line fields
         self.to_input = self._create_line_edit("To")
         fields_card_widgets.append(self.to_input)
         fields_card_widgets.append(create_separator())
@@ -81,23 +84,71 @@ class EmailView(QWidget):
         fields_card_widgets.append(self.from_input)
         fields_card_widgets.append(create_separator())
 
-        # BodyWidget for text + attachments
         self.body_widget = BodyWidget()
         fields_card_widgets.append(self.body_widget)
 
-        # Group all fields into a card
+        # Create and add the fields card
         fields_card = create_card(content_widgets=fields_card_widgets, margins=(8, 5, 8, 5), spacing=0)
         main_layout.addWidget(fields_card)
 
-        # Send button
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
+        # Send Button
         self.send_btn = create_button("Send", BLUE_BUTTON_STYLE)
         self.send_btn.clicked.connect(self.on_send_clicked)
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch(1)
+        # btn_layout.addSpacing(5)
         btn_layout.addWidget(self.send_btn)
+
         main_layout.addLayout(btn_layout)
 
         self.setLayout(main_layout)
+
+    def _get_and_validate_mailgun_credentials(self):
+        """
+        Checks for stored Mailgun credentials. If missing, prompts the user.
+        Returns (api_key, domain) or (None, None) if user cancels or retrieval fails.
+        """
+        if not self.current_user_email:
+            self.toast.show_message("User not identified")
+            return None, None
+
+        credentials = auth.get_mailgun_credentials(self.current_user_email)
+        if credentials is None:
+            self.toast.show_message("Error retrieving user data", "error")
+            return None, None
+
+        api_key, domain = credentials
+
+        # If either credential is missing, open the MailgunCredentialsModal
+        if not api_key or not domain:
+            self.toast.show_message("Mailgun credentials required", "info")
+
+            modal = MailgunCredentialsModal(
+                self, current_key=api_key, current_domain=domain, current_user_email=self.current_user_email
+            )
+            self.center_modal(modal)
+
+            result = modal.exec_()
+            if result == MailgunCredentialsModal.Accepted:
+                api_key, domain = modal.get_credentials()
+                # Attempt to save the newly entered credentials
+                if not auth.save_mailgun_credentials(self.current_user_email, api_key, domain):
+                    self.toast.show_message("Failed to save credentials", "error")
+                    return None, None
+
+                if api_key and domain:
+                    # Credentials are now valid & saved
+                    self.toast.show_message("Settings saved", "info")
+                else:
+                    # User left them blank
+                    self.toast.show_message("Settings cancelled", "info")
+                    return None, None
+            else:
+                # Modal was closed or "Cancel" pressed
+                self.toast.show_message("Settings cancelled", "info")
+                return None, None
+
+        return api_key, domain
 
     def _create_line_edit(self, placeholder):
         """Creates a single-line text input with a placeholder."""
@@ -107,7 +158,7 @@ class EmailView(QWidget):
         return line_edit
 
     def on_send_clicked(self):
-        """Collect fields, send via mailgun, and clear on success."""
+        """Collect fields, get credentials, send via mailgun, and clear on success."""
         to_text = self.to_input.text().strip()
         cc_text = self.cc_input.text().strip()
         subj_text = self.subj_input.text().strip()
@@ -125,6 +176,11 @@ class EmailView(QWidget):
         to_list = [x for x in to_text.split(',') if x.strip()]
         cc_list = [x for x in cc_text.split(',') if x.strip()]
 
+        # Get Mailgun Credentials
+        api_key, domain_name = self._get_and_validate_mailgun_credentials()
+        if not api_key or not domain_name:
+            return  # User cancelled or error occurred
+
         try:
             # Call the backend function
             send_email_via_mailgun(
@@ -132,6 +188,8 @@ class EmailView(QWidget):
                 to_addresses=to_list,
                 subject=subj_text,
                 body_text=body_text,
+                api_key=api_key,
+                domain_name=domain_name,
                 cc_addresses=cc_list,
                 attachments=attachments,
             )
@@ -169,6 +227,11 @@ class EmailView(QWidget):
                 self.toast.show_message(f"Invalid email: {addr}", "error")
                 return
 
+        # Check/Get Mailgun Credentials BEFORE opening schedule modal
+        api_key, domain_name = self._get_and_validate_mailgun_credentials()
+        if not api_key or not domain_name:
+            return  # User cancelled credential modal
+
         # If validation passes, open the schedule modal
         schedule_modal = ScheduleModalWindow(self)
         schedule_modal.schedule_saved.connect(self.on_schedule_saved)
@@ -180,6 +243,12 @@ class EmailView(QWidget):
 
     def on_schedule_saved(self, selected_time, selected_days):
         """Handles scheduling an email to be sent at the specified time."""
+
+        api_key, domain_name = self._get_and_validate_mailgun_credentials()
+        if not api_key or not domain_name:
+            self.toast.show_message("Cannot schedule without Mailgun credentials.", "error")
+            return
+
         to_text = self.to_input.text().strip()
         from_text = self.from_input.text().strip()
 
@@ -196,6 +265,8 @@ class EmailView(QWidget):
             "subject": self.subj_input.text().strip(),
             "body_text": self.body_widget.get_body_text(),
             "attachments": self.body_widget.attachments,
+            "api_key": api_key,
+            "domain_name": domain_name,
         }
 
         if self.scheduler_manager:
