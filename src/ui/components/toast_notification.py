@@ -66,15 +66,13 @@ class ToastNotification(QWidget):
         text_color = colors.get(message_type, colors["info"])
 
         # Apply styles and set the message
-        self.label.setStyleSheet(
-            f"""
+        self.label.setStyleSheet(f"""
             QLabel {{
                 color: {text_color};
                 font-size: 13px;
                 font-weight: 500;
             }}
-        """
-        )
+        """)
         self.label.setText(message)
         self.adjustSize()  # Resize the widget to fit the content
 
