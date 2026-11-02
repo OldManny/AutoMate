@@ -46,6 +46,23 @@ QPushButton:focus {
 }
 """
 
+# Green style for Sign Out button
+GREEN_BUTTON_STYLE = """
+QPushButton {
+    background-color: #4B5D5C;
+    color: white;
+    border: none;
+    border-radius: 9px;
+}
+QPushButton:pressed {
+    background-color: #41504F;
+}
+QPushButton:focus {
+    outline: none;
+    border: none;
+}
+"""
+
 ################ Input Field Style ################
 
 # Style for folder input fields
@@ -247,5 +264,19 @@ QPushButton {
 }
 QPushButton:hover {
     color: #EF4444;
+}
+"""
+
+####### Mailgun fields Style #######
+
+INPUT_FIELDS_STYLE_MAILGUN = """
+QLineEdit {
+    background-color: #4B5D5C;
+    color: white;
+    border-radius: 14px;
+    padding: 4px 12px;
+    margin: 5px 0;
+    font-size: 13px;
+    min-height: 4px;
 }
 """

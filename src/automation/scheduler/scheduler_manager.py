@@ -16,6 +16,10 @@ from src.automation.scheduler.job_handler import TASK_FUNCTIONS, TASK_LABELS
 
 logger = logging.getLogger(__name__)
 
+# This is the location where scheduled jobs will be stored on the user's system
+DEFAULT_JOBS_FILE = None
+ATTACHMENTS_BASE_DIR = None
+
 
 class SchedulerManager:
     """
@@ -23,8 +27,18 @@ class SchedulerManager:
     storing jobs persistently in a JSON file.
     """
 
-    def __init__(self, jobs_file: str = "scheduled_jobs.json", start_scheduler: bool = True):
-        self.jobs_file = jobs_file
+    def __init__(self, jobs_file: str = None, start_scheduler: bool = True):
+        self.jobs_file = jobs_file if jobs_file is not None else DEFAULT_JOBS_FILE
+        if not self.jobs_file:
+            raise ValueError("Jobs file path is not set for SchedulerManager.")
+        print(f"Scheduler using jobs file: {self.jobs_file}")
+
+        # Ensure attachments dir exists using the path set by main_app.py
+        if not ATTACHMENTS_BASE_DIR:
+            raise ValueError("Attachments base directory path is not set for SchedulerManager.")
+        os.makedirs(ATTACHMENTS_BASE_DIR, exist_ok=True)
+        print(f"Scheduler using attachments dir: {ATTACHMENTS_BASE_DIR}")
+
         self.job_metadata = {}
 
         # Configure executors and job defaults
@@ -149,8 +163,11 @@ class SchedulerManager:
         """
         if not attachments:
             return []
+        if not ATTACHMENTS_BASE_DIR:  # Safety check
+            logger.error("Attachments directory path not configured.")
+            return []
 
-        base_dir = "scheduled_attachments"
+        base_dir = ATTACHMENTS_BASE_DIR
         os.makedirs(base_dir, exist_ok=True)
 
         new_paths = []
@@ -177,11 +194,18 @@ class SchedulerManager:
         """
         Removes attachments from storage after a one-time email job has been executed.
         """
+        if not ATTACHMENTS_BASE_DIR:
+            return  # Safety check
         attachments = job_data.get("email_params", {}).get("attachments", [])
         for path in attachments:
             try:
-                os.remove(path)
-                logger.info(f"Removed attachment file: {path}")
+                norm_base = os.path.normcase(os.path.abspath(ATTACHMENTS_BASE_DIR))
+                norm_path = os.path.normcase(os.path.abspath(path))
+                if norm_path.startswith(norm_base):
+                    os.remove(path)
+                    logger.info(f"Removed attachment file: {path}")
+                else:
+                    logger.warning(f"Skipping removal of attachment outside designated area: {path}")
             except Exception as e:
                 logger.warning(f"Could not remove {path}: {e}")
 
@@ -284,6 +308,8 @@ class SchedulerManager:
                     "body_text": email_params.get("body_text"),
                     "cc_addresses": email_params.get("cc_addresses"),
                     "attachments": email_params.get("attachments"),
+                    "api_key": email_params.get("api_key"),
+                    "domain_name": email_params.get("domain_name"),
                 },
                 replace_existing=True,
             )
