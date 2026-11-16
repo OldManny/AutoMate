@@ -73,13 +73,11 @@ class RunningJobsModal(BaseModalWindow):
 
         for text, width_percent in header_widths.items():
             label = QLabel(text)
-            label.setStyleSheet(
-                f"""
+            label.setStyleSheet(f"""
                 font-weight: {self.font_weight};  /* Platform-specific font weight */
                 color: #C9D3D5;
                 font-size: {self.font_size}pt;  /* Platform-specific font size */
-                """
-            )
+                """)
             label.setAlignment(Qt.AlignLeft)
             label.setMinimumWidth(int(self.width() * width_percent / 100))
             header_layout.addWidget(label)
@@ -99,11 +97,9 @@ class RunningJobsModal(BaseModalWindow):
         self.jobs_container_layout.setSpacing(0)
 
         scroll_area = QScrollArea()
-        self.jobs_container.setStyleSheet(
-            """
+        self.jobs_container.setStyleSheet("""
             background-color: #333333;  /* Dark gray background */
-        """
-        )
+        """)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.jobs_container)
         scroll_area.setStyleSheet("border: none;")

@@ -59,13 +59,15 @@ from src.ui.views.email_view import EmailView  # noqa: E402
 from src.ui.views.file_view import FileView  # noqa: E402
 from src.ui.views.login_view import LoginView  # noqa: E402
 from src.utils import undo_manager  # noqa: E402
-from src.utils.auth import clear_last_token_file  # noqa: E402
-from src.utils.auth import clear_remember_me_token  # noqa: E402
-from src.utils.auth import generate_remember_me_token  # noqa: E402
-from src.utils.auth import get_mailgun_credentials  # noqa: E402
-from src.utils.auth import get_user_by_token  # noqa: E402
-from src.utils.auth import load_last_token  # noqa: E402
-from src.utils.auth import load_user_data  # noqa: E402
+from src.utils.auth import (  # noqa: E402
+    clear_last_token_file,
+    clear_remember_me_token,
+    generate_remember_me_token,
+    get_mailgun_credentials,
+    get_user_by_token,
+    load_last_token,
+    load_user_data,
+)
 from src.utils.auth import save_last_token  # noqa: E402; noqa: E402
 from src.utils.check_daemon import check_daemon_running  # noqa: E402
 from src.utils.resources import resource_path  # noqa: E402
