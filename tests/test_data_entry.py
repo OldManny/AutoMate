@@ -8,8 +8,29 @@ from src.automation.data_entry import (
     split_full_into_first_last,
     unify_column_name,
 )
-from src.utils.undo_manager import undo_data_operation
+from src.utils import undo_manager
 
+
+def undo_data_operation_local():
+    """Local wrapper to ensure LOG_FILE is set before calling."""
+    if not undo_manager.LOG_FILE:
+         raise ValueError("LOG_FILE not set for undo_data_operation")
+
+    # Dynamically import or call the original function
+    from src.utils.undo_manager import undo_data_operation
+    undo_data_operation()
+
+
+@pytest.fixture
+def mock_undo_log(tmp_path, monkeypatch):
+    """Patches the undo_manager.LOG_FILE path."""
+    temp_log_file = tmp_path / "test_operation_log.json"
+    monkeypatch.setattr(undo_manager, "LOG_FILE", str(temp_log_file))
+    yield temp_log_file # Return the path if needed
+
+    # Clean up the log file if it exists after test
+    if temp_log_file.exists():
+        temp_log_file.unlink()
 
 @pytest.fixture
 def sample_df():
@@ -54,6 +75,7 @@ def test_split_full_into_first_last():
     assert "Last Name" in df.columns
     assert df.loc[0, "First Name"] == "Alice"
     assert df.loc[0, "Last Name"] == "Smith"
+
     # Single-word Full Name => goes to Last Name
     assert df.loc[1, "First Name"] == ""
     assert df.loc[1, "Last Name"] == "Bob"
@@ -67,7 +89,7 @@ def data_temp_dir(tmp_path):
     return tmp_path
 
 
-def test_merge_data(data_temp_dir):
+def test_merge_data(data_temp_dir, mock_undo_log):
     """
     Creates a master file and one or more 'other files' in the temp dir,
     then calls merge_data, and checks the results.
@@ -109,7 +131,7 @@ def test_merge_data(data_temp_dir):
     assert "Dan Williams" in all_full_names
 
 
-def test_mirror_data(data_temp_dir):
+def test_mirror_data(data_temp_dir, mock_undo_log):
     """
     Tests mirroring the master file to target files, verifying that name columns are handled properly.
     """
@@ -121,10 +143,12 @@ def test_mirror_data(data_temp_dir):
     master_df.to_excel(master_file, index=False)
 
     target_file = data_temp_dir / "target.xlsx"
+
+    # Start target with defined columns but no data
     target_df = pd.DataFrame({
-        "First Name": [],
-        "Last Name": [],
-        "Email": []
+        "First Name": pd.Series(dtype='object'), # Ensure correct types
+        "Last Name": pd.Series(dtype='object'),
+        "Email": pd.Series(dtype='object')
     })
     target_df.to_excel(target_file, index=False)
 
@@ -149,13 +173,13 @@ def test_mirror_data(data_temp_dir):
     assert updated_target_df.loc[0, "Email"] == "eve@example.com"
 
 
-def test_undo_data_operation(data_temp_dir):
+def test_undo_data_operation(data_temp_dir, mock_undo_log):
     """
     Demonstrates an undo test for data operations if you have a log + backup.
     """
     master_file = data_temp_dir / "master.csv"
-    master_df = pd.DataFrame({"First Name": ["Alice"], "Last Name": ["Smith"]})
-    master_df.to_csv(master_file, index=False)
+    original_master_content = pd.DataFrame({"First Name": ["Alice"], "Last Name": ["Smith"]})
+    original_master_content.to_csv(master_file, index=False)
 
     other_file = data_temp_dir / "other.csv"
     other_df = pd.DataFrame({"First Name": ["Bob"], "Last Name": ["Johnson"]})
@@ -174,10 +198,11 @@ def test_undo_data_operation(data_temp_dir):
     merged_df = pd.read_csv(master_file)
     assert len(merged_df) == 2
 
-    # Undo the merge
-    undo_data_operation()
+    # Undo the merge using the local wrapper that ensures LOG_FILE is set
+    undo_data_operation_local()
 
     # After undo, the master should be back to original
     undone_df = pd.read_csv(master_file)
-    assert len(undone_df) == 1
-    assert undone_df.loc[0, "First Name"] == "Alice"
+
+    # Use pandas comparison which handles NaNs etc. better
+    pd.testing.assert_frame_equal(undone_df, original_master_content)

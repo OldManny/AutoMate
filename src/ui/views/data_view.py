@@ -1,8 +1,8 @@
 from datetime import datetime
 import os
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QButtonGroup,
     QFileDialog,
@@ -27,6 +27,7 @@ from src.ui.components.toast_notification import ToastNotification
 from src.ui.modals.info_modal import InfoWindow
 from src.ui.modals.schedule_modal import ScheduleModalWindow
 from src.ui.style import BLUE_BUTTON_STYLE, GRAY_BUTTON_STYLE
+from src.utils.resources import resource_path
 from src.utils.undo_manager import undo_data_operation
 
 
@@ -46,7 +47,7 @@ class DataView(QWidget):
         self.single_file_path = None
         self.multi_file_paths = []
 
-        # 1) Instantiate the toast
+        # Instantiate the toast
         self.toast = ToastNotification(self)
 
         self.init_ui()
@@ -65,11 +66,15 @@ class DataView(QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
 
+        icon_relative_path = "assets/icons/data.png"
+        logical_icon_size = QSize(39, 39)
         icon_label = QLabel()
-        icon_pixmap = QPixmap("assets/icons/data.png").scaled(39, 39, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setContentsMargins(0, 10, 0, 1)
-        icon_label.setPixmap(icon_pixmap)
+        icon_path_absolute = resource_path(icon_relative_path)
+        icon = QIcon(icon_path_absolute)
+        scaled_pixmap = icon.pixmap(logical_icon_size)
+        icon_label.setPixmap(scaled_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setContentsMargins(0, 10, 0, 1)
 
         desc_label = QLabel("Streamline your data flow:\nmerge or mirror files with ease.")
         desc_label.setAlignment(Qt.AlignCenter)
@@ -89,7 +94,7 @@ class DataView(QWidget):
         file_layout.addWidget(self.file_input)
 
         self.file_icon_btn = create_icon_button(
-            icon_path="assets/icons/folder.png",
+            icon_path=resource_path("assets/icons/folder.png"),
             icon_size=(29, 29),
             button_size=(30, 30),
         )
@@ -121,7 +126,7 @@ class DataView(QWidget):
         info_header_layout.addWidget(info_text)
 
         info_button = create_icon_button(
-            icon_path="assets/icons/info.png",
+            icon_path=resource_path("assets/icons/info.png"),
             icon_size=(16, 16),
             button_size=(20, 20),
         )
